@@ -8,6 +8,8 @@ A playful procedural 3D kitten generator for shaping bodies, designing coats, pl
 
 [Live Demo](https://ringhyacinth.github.io/Meow-Generator/) · [Report an Issue](https://github.com/ringhyacinth/Meow-Generator/issues)
 
+[Noncommercial Source-Available License](LICENSE) · [Commercial Use and Collaboration](COMMERCIAL-LICENSE.md)
+
 </div>
 
 ![Meow Generator interface and collectible kitten card in Chinese, Japanese, and English](docs/screenshot.png)
@@ -125,7 +127,11 @@ For future-version development or collaboration proposals, contact [ringhyacinth
 - Compact feline motion data in `src/mesh2motionClips.json` is derived from [Mesh2Motion](https://mesh2motion.org/) fox/cat assets released under [CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE). See [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md).
 - Three.js, Cannon-es, Vite, and their transitive dependencies retain their respective licenses.
 
-Except for third-party material identified separately, this project is licensed under the [MIT License](LICENSE). You may use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the project under the license terms, provided that the original copyright and permission notice are retained.
+Except for third-party material identified separately, this project is source-available for noncommercial use under the [PolyForm Noncommercial License 1.0.0](LICENSE). Personal study, research, experimentation, hobby projects, and qualifying noncommercial organizations may use, modify, and distribute the project under those terms.
+
+Commercial use is outside this license grant. For any use that may have a commercial purpose or anticipated commercial application—including brand collaborations, custom development, exhibitions, or content licensing—read [Commercial Use and Collaboration](COMMERCIAL-LICENSE.md) and contact [ringhyacinth@gmail.com](mailto:ringhyacinth@gmail.com) to request separate written permission.
+
+Because it restricts commercial use, this is a noncommercial source-available license, not an OSI-approved Open Source license.
 
 ## Status
 

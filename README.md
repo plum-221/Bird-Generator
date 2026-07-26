@@ -8,6 +8,8 @@
 
 [在线体验](https://ringhyacinth.github.io/Meow-Generator/) · [反馈问题](https://github.com/ringhyacinth/Meow-Generator/issues)
 
+[非商业源码开放授权](LICENSE) · [商业使用与合作](COMMERCIAL-LICENSE.md)
+
 </div>
 
 ![Meow Generator 中文、日文与英文界面及小猫收藏卡片](docs/screenshot.png)
@@ -125,7 +127,11 @@ Meow Generator 由 Simon_阿文与海辛共同制作。
 - `src/mesh2motionClips.json` 中的精简猫科动作数据来自 [Mesh2Motion](https://mesh2motion.org/) 以 [CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE) 发布的狐狸 / 猫资产，详见 [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md)。
 - Three.js、Cannon-es、Vite 及其依赖保留各自原有许可证。
 
-除另行注明的第三方内容外，本项目采用 [MIT License](LICENSE) 授权。您可以依照许可证使用、复制、修改、合并、发布、分发、再授权及销售本项目的副本，但须保留原始版权与许可声明。
+除另行注明的第三方内容外，本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE)，以源码公开、非商业使用的方式发布。个人学习、研究、实验、爱好项目，以及符合协议定义的非商业组织，可以依照协议使用、修改和分发本项目。
+
+商业使用不在该授权范围内。任何可能具有商业目的或预期商业应用的使用，以及品牌合作、定制开发、展览或内容授权，请先阅读[商业使用与合作说明](COMMERCIAL-LICENSE.md)，并联系 [ringhyacinth@gmail.com](mailto:ringhyacinth@gmail.com) 取得单独的书面授权。
+
+由于限制商业使用，这是一份非商业源码开放许可，不属于 OSI 批准的开源软件许可证。
 
 ## 当前状态
 
