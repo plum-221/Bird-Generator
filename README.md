@@ -14,9 +14,15 @@
 
 ## 关于 Neko Generator
 
-**Neko Generator** 由 **海辛（Ring Hyacinth）** 与 **Simon（英文名：Simon Lee）** 共同创作。每只小猫都由种子和可编辑参数程序化生成；相同种子可以重新生成相同的小猫体型、花色、姿势、玩具、垫子、收藏编号与稀有度。
+**Neko Generator** 由 **Simon_阿文（Simon Lee）** 与 **海辛（Ring Hyacinth）** 共同创作。每只小猫都由种子和可编辑参数程序化生成；相同种子可以重新生成相同的小猫体型、花色、姿势、玩具、垫子、收藏编号与稀有度。
 
 项目采用本地优先的浏览器体验，不需要登录账号，也没有后端服务。
+
+## 灵感来源
+
+![Neko Generator 的灵感来源：躺在圆形猫抓板上的真实橘白小猫与周围的鱼玩具、编织地毯和猫咪用品](docs/inspiration.jpg)
+
+Neko Generator 的灵感来自我们身边真实的小猫。它圆润的身体、蜷坐的姿态，以及猫抓板、鱼玩具、编织地毯与明亮配色，共同成为项目在造型、场景、玩具和色彩设计上的起点。
 
 ## 主要功能
 
@@ -99,27 +105,27 @@ Motion 测试覆盖 14 段动画、19 根骨骼、蒙皮权重、状态机输入
 
 ## 创作者
 
-Neko Generator 由海辛与 Simon 共同制作。
+Neko Generator 由 Simon_阿文与海辛共同制作。
+
+### Simon_阿文（Simon Lee）
+
+- [Twitter / X](https://x.com/simonxxoo)
+- [微博](https://weibo.com/u/1757693565)
 
 ### 海辛 / Ring Hyacinth
 
 - [Twitter / X](https://x.com/ring_hyacinth)
 - [Instagram](https://www.instagram.com/ringhyacinth/)
 
-### Simon
+如需后续版本开发或合作申请，请联系 [ringhyacinth@gmail.com](mailto:ringhyacinth@gmail.com)。
 
-英文名：**Simon Lee**
+## 素材、署名与授权
 
-- [Twitter / X](https://x.com/simonxxoo)
-- [微博](https://weibo.com/u/1757693565)
-
-## 素材、署名与使用范围
-
-- 应用设计、程序化小猫系统、界面、原创视觉素材与生成式 BGM 由海辛和 Simon 为本项目共同制作。
+- 应用设计、程序化小猫系统、界面、原创视觉素材与生成式 BGM 由 Simon_阿文（Simon Lee）和海辛（Ring Hyacinth）为本项目共同制作。
 - `src/mesh2motionClips.json` 中的精简猫科动作数据来自 [Mesh2Motion](https://mesh2motion.org/) 以 [CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE) 发布的狐狸 / 猫资产，详见 [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md)。
 - Three.js、Cannon-es、Vite 及其依赖保留各自原有许可证。
 
-本项目目前尚未选择项目级开源许可证。仓库公开用于查看、体验与交流，但不代表自动授予原创代码、设计、品牌、音乐或视觉素材的转载、改编或商业使用权。重新分发或商用前，请先联系创作者。
+除另行注明的第三方内容外，本项目采用 [MIT License](LICENSE) 授权。您可以依照许可证使用、复制、修改、合并、发布、分发、再授权及销售本项目的副本，但须保留原始版权与许可声明。
 
 ## 当前状态
 

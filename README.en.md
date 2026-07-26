@@ -14,9 +14,15 @@ A playful procedural 3D kitten generator for shaping bodies, designing coats, pl
 
 ## About Neko Generator
 
-**Neko Generator** is co-created by **Ring Hyacinth** and **Simon Lee**. Every kitten is procedurally generated from a seed and editable parameters. Reusing the same seed recreates the same body, coat, pose, toys, rug, collection number, and rarity.
+**Neko Generator** is co-created by **Simon_阿文 (Simon Lee)** and **Ring Hyacinth (海辛)**. Every kitten is procedurally generated from a seed and editable parameters. Reusing the same seed recreates the same body, coat, pose, toys, rug, collection number, and rarity.
 
 The project is a local-first browser experience. It requires no account and has no backend service.
+
+## Inspiration
+
+![The real orange-and-white kitten that inspired Neko Generator, resting on a round scratcher among fish toys, woven rugs, and colorful cat furniture](docs/inspiration.jpg)
+
+Neko Generator began with a real kitten in our everyday life. Its rounded body and curled resting pose—together with the scratcher, fish toys, woven rugs, and bright household colors—became the starting point for the project’s character shapes, scenes, toys, and palette.
 
 ## Features
 
@@ -99,27 +105,27 @@ The app has no backend. Runtime state and exports remain in the browser or on th
 
 ## Creators
 
-Neko Generator is made by Ring Hyacinth and Simon Lee.
+Neko Generator is made by Simon_阿文 (Simon Lee) and Ring Hyacinth.
 
-### Ring Hyacinth
-
-- [Twitter / X](https://x.com/ring_hyacinth)
-- [Instagram](https://www.instagram.com/ringhyacinth/)
-
-### Simon Lee
-
-Chinese credit name: **Simon**
+### Simon_阿文 (Simon Lee)
 
 - [Twitter / X](https://x.com/simonxxoo)
 - [Weibo](https://weibo.com/u/1757693565)
 
-## Assets, Attribution, and Reuse
+### Ring Hyacinth / 海辛
 
-- The application design, procedural kitten system, interface, original visual assets, and generated BGM were created for this project by Ring Hyacinth and Simon Lee.
+- [Twitter / X](https://x.com/ring_hyacinth)
+- [Instagram](https://www.instagram.com/ringhyacinth/)
+
+For future-version development or collaboration proposals, contact [ringhyacinth@gmail.com](mailto:ringhyacinth@gmail.com).
+
+## Assets, Attribution, and License
+
+- The application design, procedural kitten system, interface, original visual assets, and generated BGM were created for this project by Simon_阿文 (Simon Lee) and Ring Hyacinth.
 - Compact feline motion data in `src/mesh2motionClips.json` is derived from [Mesh2Motion](https://mesh2motion.org/) fox/cat assets released under [CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE). See [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md).
 - Three.js, Cannon-es, Vite, and their transitive dependencies retain their respective licenses.
 
-No project-wide open-source license has been selected yet. The repository is public for viewing, testing, and discussion, but publication does not grant permission to reuse the original code, design, branding, music, or visual assets. Please contact the creators before redistribution or commercial use.
+Except for third-party material identified separately, this project is licensed under the [MIT License](LICENSE). You may use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the project under the license terms, provided that the original copyright and permission notice are retained.
 
 ## Status
 

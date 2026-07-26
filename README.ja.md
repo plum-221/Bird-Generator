@@ -14,9 +14,15 @@
 
 ## Neko Generator について
 
-**Neko Generator** は **Ring Hyacinth（海辛）** と **Simon Lee** の共同制作です。すべての子猫はシードと編集可能なパラメーターからプロシージャルに生成されます。同じシードを使うと、体型、毛柄、ポーズ、玩具、ラグ、カード番号、レアリティまで同じ子猫を再生成できます。
+**Neko Generator** は **Simon_阿文（Simon Lee）** と **Ring Hyacinth（海辛）** の共同制作です。すべての子猫はシードと編集可能なパラメーターからプロシージャルに生成されます。同じシードを使うと、体型、毛柄、ポーズ、玩具、ラグ、カード番号、レアリティまで同じ子猫を再生成できます。
 
 本プロジェクトはローカルファーストのブラウザー体験です。アカウント登録は不要で、バックエンドサービスも使用しません。
+
+## インスピレーション
+
+![Neko Generator の着想源となった本物の茶白の子猫。丸い爪とぎの上で、魚の玩具、編みラグ、カラフルな猫用品に囲まれている](docs/inspiration.jpg)
+
+Neko Generator の出発点は、私たちの日常にいる本物の子猫です。丸みのある体とくるりと休む姿勢、そして爪とぎ、魚の玩具、編みラグ、明るい生活空間の色彩が、キャラクター造形、シーン、玩具、カラーパレットの着想になりました。
 
 ## 主な機能
 
@@ -99,27 +105,27 @@ Motion テストでは、14 アニメーション、19 ボーン、スキンウ�
 
 ## クリエイター
 
-Neko Generator は Ring Hyacinth と Simon Lee の共同制作です。
+Neko Generator は Simon_阿文（Simon Lee）と Ring Hyacinth の共同制作です。
+
+### Simon_阿文（Simon Lee）
+
+- [Twitter / X](https://x.com/simonxxoo)
+- [Weibo / 微博](https://weibo.com/u/1757693565)
 
 ### Ring Hyacinth / 海辛
 
 - [Twitter / X](https://x.com/ring_hyacinth)
 - [Instagram](https://www.instagram.com/ringhyacinth/)
 
-### Simon Lee
+今後のバージョン開発やコラボレーションのご相談は、[ringhyacinth@gmail.com](mailto:ringhyacinth@gmail.com) までご連絡ください。
 
-中国語表記：**Simon**
+## 素材、クレジット、ライセンス
 
-- [Twitter / X](https://x.com/simonxxoo)
-- [Weibo / 微博](https://weibo.com/u/1757693565)
-
-## 素材、クレジット、利用範囲
-
-- アプリデザイン、プロシージャル子猫システム、インターフェース、オリジナルのビジュアル素材、生成 BGM は Ring Hyacinth と Simon Lee が本プロジェクトのために制作しました。
+- アプリデザイン、プロシージャル子猫システム、インターフェース、オリジナルのビジュアル素材、生成 BGM は Simon_阿文（Simon Lee）と Ring Hyacinth が本プロジェクトのために制作しました。
 - `src/mesh2motionClips.json` の軽量な猫科モーションデータは、[CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE) で公開された [Mesh2Motion](https://mesh2motion.org/) のキツネ / 猫アセットをもとにしています。詳細は [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md) を参照してください。
 - Three.js、Cannon-es、Vite、および依存パッケージには、それぞれのライセンスが適用されます。
 
-現時点では、プロジェクト全体に適用するオープンソースライセンスは選定していません。リポジトリは閲覧、体験、議論のために公開していますが、オリジナルのコード、デザイン、ブランド、音楽、ビジュアル素材の再利用を自動的に許可するものではありません。再配布または商用利用の前に、クリエイターへご連絡ください。
+個別に明記された第三者素材を除き、本プロジェクトは [MIT License](LICENSE) の下で提供されます。元の著作権表示と許諾表示を保持することを条件に、ライセンス条項に従って利用、複製、変更、結合、公開、配布、サブライセンス、販売できます。
 
 ## 現在の状態
 
