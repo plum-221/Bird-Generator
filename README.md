@@ -1,62 +1,68 @@
+<div align="center">
+
 # Neko Generator
 
-> A playful, local-first procedural 3D kitten generator built with Three.js.
->
-> 一个可以捏体型、换花色、玩玩具、切天气、做动作并生成收藏卡片的程序化 3D 小猫工具。
+**中文** · [English](README.en.md) · [日本語](README.ja.md)
 
-**Neko Generator** is co-created by [Ring Hyacinth / 海辛](https://github.com/ringhyacinth) and [Simon / 阿文](https://github.com/simonxxooxxoo).
+一个可以捏体型、换花色、玩玩具、切换天气、尝试动作并生成收藏卡片的程序化 3D 小猫工具。
 
-[Live Demo](https://ringhyacinth.github.io/Neko-Generator/) · [Report an issue](https://github.com/ringhyacinth/Neko-Generator/issues)
+[在线体验](https://ringhyacinth.github.io/Neko-Generator/) · [反馈问题](https://github.com/ringhyacinth/Neko-Generator/issues)
 
-![Neko Generator screenshot](docs/screenshot.png)
+</div>
 
-## What it does
+![Neko Generator 中文、日文与英文界面及小猫收藏卡片](docs/screenshot.png)
 
-Every kitten is generated from a seed and editable parameters. The same seed recreates the same kitten, including its body, coat, pose, toys, rug, collectible-card number, and rarity.
+## 关于 Neko Generator
 
-- Procedural SDF body with adjustable proportions, ears, legs, tail, and fluff
-- 11 coat presets plus custom colors and pattern controls
-- Eye colors, heterochromia, pupil size, and watery-eye deformation
-- Eight static forms with soft idle motion
-- Experimental fixed-mesh motion mode with 19-bone skinning and 14 animation clips
-- Hand-drawn toon outlines, cel shading, and configurable hatch shadows
-- Interactive physics toys, cat beds, fish, ducks, yarn balls, and rugs
-- Sunny, cloudy, thunder, rain, and fish-rain scene states
-- GLB export and collectible PNG share cards
-- Chinese, Japanese, and English interfaces
-- Desktop and mobile layouts
+**Neko Generator** 由 **海辛（Ring Hyacinth）** 与 **Simon（英文名：Simon Lee）** 共同创作。每只小猫都由种子和可编辑参数程序化生成；相同种子可以重新生成相同的小猫体型、花色、姿势、玩具、垫子、收藏编号与稀有度。
 
-## Collectible share cards
+项目采用本地优先的浏览器体验，不需要登录账号，也没有后端服务。
 
-Opening **Capture PNG / 留影 PNG** creates a card theme from the current kitten’s base coat, primary and secondary pattern colors, and eye color.
+## 主要功能
 
-Each kitten receives:
+- 基于 SDF 的程序化小猫身体，可调整头身比、圆润度、腿、耳朵、尾巴与毛发
+- 11 种预设花色，以及自定义颜色和花纹参数
+- 眼睛颜色、异瞳、瞳孔尺寸与泪眼形变
+- 多种静态造型与轻微待机动作
+- 实验性的 Motion 模式：19 根骨骼与 14 段动画
+- 手绘感描边、三渲二明暗与可调排线阴影
+- 可抓取和投掷的鱼、鸭子、毛线球、猫窝及其他物理玩具
+- 晴天、阴天、雷雨、下雨与鱼雨场景
+- GLB 模型导出与 PNG 小猫收藏卡片
+- 中文、英文、日文界面
+- 桌面端与移动端布局
 
-- a stable collection number, such as `第 2902 张 / 9999`;
-- a deterministic `R`, `SR`, or `AR` rarity;
-- a kitten-derived default palette;
-- optional remixed skins using rug-inspired dots, checks, confetti, and waves;
-- a repository address printed into the exported PNG so the project can be found again.
+## 小猫收藏卡片
 
-## Run locally
+点击 **留影 PNG** 后，Neko Generator 会读取当前小猫的底色、主辅花纹色和眼睛颜色，为它生成专属的默认卡面。
 
-Requirements: Node.js 20.19+ or 22.12+.
+每只小猫都会获得：
+
+- 一个稳定的收藏编号，例如 `第 2902 张 / 9999`
+- 一个由小猫种子稳定决定的 `R`、`SR` 或 `AR` 稀有度
+- 一套从小猫自身颜色提取的默认卡面
+- 可通过“换一个皮肤”切换的圆点、格纹、彩屑与波纹主题
+- 印在导出 PNG 上的公开仓库地址，方便重新找到项目
+
+## 本地运行
+
+需要 Node.js 20.19+ 或 22.12+。
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open <http://localhost:8791>.
+然后打开 <http://localhost:8791>。
 
-Production build:
+生产构建：
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Tests
+## 测试
 
 ```bash
 npm run test:share
@@ -65,59 +71,58 @@ npm run test:poke
 npm run test:motion
 ```
 
-The motion test covers the 14 animation actions, the 19-bone rig, skin weights, state-machine inputs, and source-frame sampling.
+Motion 测试覆盖 14 段动画、19 根骨骼、蒙皮权重、状态机输入与源动画采样。
 
-## Controls
+## 操作方式
 
-- Drag: orbit camera
-- Mouse wheel / trackpad: zoom
-- Right-drag: pan
-- Drag toys: grab and throw
-- Drag cheeks or the rear interaction area: soft-body poke
-- Drag the back of the neck: lift the kitten
-- Motion mode: use `WASD` or arrow keys; action shortcuts are shown in the Motion panel
+- 左键拖动：旋转摄影机
+- 滚轮或触控板：缩放
+- 右键拖动：平移
+- 拖动玩具：抓取与投掷
+- 拖动脸颊或后侧交互区：软体捏猫
+- 拖动后颈：提起小猫
+- Motion 模式：使用 `WASD` 或方向键；动作快捷键显示在 Motion 面板中
 
-## Project structure
+## 项目结构
 
-- `src/sdf.js` — signed-distance primitives and surface-nets meshing
-- `src/catBuilder.js` — kitten construction, coat shading, and facial details
-- `src/coats.js` — coat, eye, and pose definitions
-- `src/rug.js` — seed-based rugs and palettes
-- `src/toys.js` — Cannon-es toy physics and grabbing
-- `src/weather.js` — weather, lightning, rain, clouds, and falling fish
-- `src/shareCard.js` — collectible-card themes and PNG generation
-- `src/mesh2motion*.js` — motion sampling, retargeting, rigging, and skinning
-- `src/i18n.js` — Chinese, Japanese, and English UI copy
+- `src/sdf.js` — SDF 基础形状与 Surface Nets 网格生成
+- `src/catBuilder.js` — 小猫结构、花色渲染与面部细节
+- `src/coats.js` — 花色、眼睛与姿势定义
+- `src/rug.js` — 基于种子的垫子与配色
+- `src/toys.js` — Cannon-es 玩具物理与抓取
+- `src/weather.js` — 天气、闪电、雨、云与落鱼
+- `src/shareCard.js` — 收藏卡片主题与 PNG 生成
+- `src/mesh2motion*.js` — 动作采样、重定向、骨骼与蒙皮
+- `src/i18n.js` — 中文、英文与日文界面文案
 
-The app has no backend. Runtime state and exports stay in the browser or on the user’s device; the project does not include analytics or account systems.
+应用没有后端。运行状态和导出文件只保留在浏览器或用户设备中；项目不包含数据分析或账号系统。
 
-## Creators
+## 创作者
 
-Neko Generator is a project by **海辛阿文工作室 / Haixin & Awen Studio**.
+Neko Generator 由海辛与 Simon 共同制作。
 
-### Ring Hyacinth / 海辛
+### 海辛 / Ring Hyacinth
 
-- [GitHub](https://github.com/ringhyacinth)
-- [X](https://x.com/ring_hyacinth)
+- [Twitter / X](https://x.com/ring_hyacinth)
 - [Instagram](https://www.instagram.com/ringhyacinth/)
-- [Weibo](https://weibo.com/u/1309158107)
-- [Xiaohongshu / 小红书](https://www.xiaohongshu.com/user/profile/648a5137000000002a0360e5)
-- [3D Portfolio](https://ringhyacinth.github.io/hyacinth.im-site/)
 
-### Simon / 阿文
+### Simon
 
-- [GitHub](https://github.com/simonxxooxxoo)
+英文名：**Simon Lee**
 
-## Assets, attribution, and reuse
+- [Twitter / X](https://x.com/simonxxoo)
+- [微博](https://weibo.com/u/1757693565)
 
-- The application design, procedural kitten system, interface, original visual assets, and generated BGM were created for this project by Ring Hyacinth and Simon.
-- Compact feline motion data in `src/mesh2motionClips.json` is derived from [Mesh2Motion](https://mesh2motion.org/) fox/cat assets released under [CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE). See [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md).
-- Three.js, Cannon-es, Vite, and their transitive dependencies retain their respective licenses.
+## 素材、署名与使用范围
 
-No project-wide open-source license has been selected yet. The repository is public for viewing, testing, and discussion, but publication does not grant permission to reuse the original code, design, branding, music, or visual assets. Please contact the creators before redistribution or commercial use.
+- 应用设计、程序化小猫系统、界面、原创视觉素材与生成式 BGM 由海辛和 Simon 为本项目共同制作。
+- `src/mesh2motionClips.json` 中的精简猫科动作数据来自 [Mesh2Motion](https://mesh2motion.org/) 以 [CC0 1.0](https://github.com/Mesh2Motion/mesh2motion-assets/blob/main/LICENSE) 发布的狐狸 / 猫资产，详见 [`third_party/mesh2motion/README.md`](third_party/mesh2motion/README.md)。
+- Three.js、Cannon-es、Vite 及其依赖保留各自原有许可证。
 
-## Status
+本项目目前尚未选择项目级开源许可证。仓库公开用于查看、体验与交流，但不代表自动授予原创代码、设计、品牌、音乐或视觉素材的转载、改编或商业使用权。重新分发或商用前，请先联系创作者。
 
-The web version is an active creative-tool prototype. The Motion section is explicitly experimental. Extreme body parameters, long-running WebGL sessions, and mobile performance may vary by device.
+## 当前状态
 
-Issues and reproducible bug reports are welcome.
+网页版仍是持续迭代中的创意工具原型，Motion 模块明确属于实验功能。极端体型参数、长时间 WebGL 运行与移动设备性能可能因设备而异。
+
+欢迎提交可复现的问题和使用反馈。
