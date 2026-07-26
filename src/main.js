@@ -759,7 +759,7 @@ const speechBubbles = createSpeechBubbleController({
   },
 });
 window.__speechBubbles = speechBubbles;
-window.addEventListener('neko:speech', (event) => {
+window.addEventListener('meow:speech', (event) => {
   speechBubbles.showNow(event.detail?.role ?? '');
 });
 
@@ -2869,7 +2869,7 @@ mobilePanelMedia.addEventListener('change', () => {
   selectMobileSection(activeMobileSection, { scroll: false });
 });
 
-window.addEventListener('neko:localechange', () => {
+window.addEventListener('meow:localechange', () => {
   [...mobileSectionNav.children].forEach((button, index) => {
     button.textContent = mobileSectionTitle(mobileSections[index]);
   });

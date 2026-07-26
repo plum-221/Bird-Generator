@@ -1,28 +1,28 @@
 <div align="center">
 
-# Neko Generator
+# Meow Generator
 
 [中文](README.md) · [English](README.en.md) · **日本語**
 
 体型や毛柄を作り、玩具で遊び、天気やモーションを切り替え、コレクションカードまで生成できるプロシージャル 3D 子猫ツールです。
 
-[オンライン版](https://ringhyacinth.github.io/Neko-Generator/) · [不具合を報告](https://github.com/ringhyacinth/Neko-Generator/issues)
+[オンライン版](https://ringhyacinth.github.io/Meow-Generator/) · [不具合を報告](https://github.com/ringhyacinth/Meow-Generator/issues)
 
 </div>
 
-![中国語・日本語・英語に対応した Neko Generator の画面と子猫コレクションカード](docs/screenshot.png)
+![中国語・日本語・英語に対応した Meow Generator の画面と子猫コレクションカード](docs/screenshot.png)
 
-## Neko Generator について
+## Meow Generator について
 
-**Neko Generator** は **Simon_阿文（Simon Lee）** と **Ring Hyacinth（海辛）** の共同制作です。すべての子猫はシードと編集可能なパラメーターからプロシージャルに生成されます。同じシードを使うと、体型、毛柄、ポーズ、玩具、ラグ、カード番号、レアリティまで同じ子猫を再生成できます。
+**Meow Generator** は **Simon_阿文（Simon Lee）** と **Ring Hyacinth（海辛）** の共同制作です。すべての子猫はシードと編集可能なパラメーターからプロシージャルに生成されます。同じシードを使うと、体型、毛柄、ポーズ、玩具、ラグ、カード番号、レアリティまで同じ子猫を再生成できます。
 
 本プロジェクトはローカルファーストのブラウザー体験です。アカウント登録は不要で、バックエンドサービスも使用しません。
 
 ## インスピレーション
 
-![Neko Generator の着想源となった本物の茶白の子猫。丸い爪とぎの上で、魚の玩具、編みラグ、カラフルな猫用品に囲まれている](docs/inspiration.jpg)
+![Meow Generator の着想源となった本物の茶白の子猫。丸い爪とぎの上で、魚の玩具、編みラグ、カラフルな猫用品に囲まれている](docs/inspiration.jpg)
 
-Neko Generator の出発点は、私たちの日常にいる本物の子猫です。丸みのある体とくるりと休む姿勢、そして爪とぎ、魚の玩具、編みラグ、明るい生活空間の色彩が、キャラクター造形、シーン、玩具、カラーパレットの着想になりました。
+Meow Generator の出発点は、私たちの日常にいる本物の子猫です。丸みのある体とくるりと休む姿勢、そして爪とぎ、魚の玩具、編みラグ、明るい生活空間の色彩が、キャラクター造形、シーン、玩具、カラーパレットの着想になりました。
 
 ## 主な機能
 
@@ -105,7 +105,7 @@ Motion テストでは、14 アニメーション、19 ボーン、スキンウ�
 
 ## クリエイター
 
-Neko Generator は Simon_阿文（Simon Lee）と Ring Hyacinth の共同制作です。
+Meow Generator は Simon_阿文（Simon Lee）と Ring Hyacinth の共同制作です。
 
 ### Simon_阿文（Simon Lee）
 

@@ -1960,10 +1960,11 @@ select {
 
 .panel-footer-logo {
   display: block;
-  width: 46%;
+  width: 92%;
   height: auto;
   object-fit: contain;
-  opacity: 0.72;
+  border-radius: 18px;
+  opacity: 0.9;
   pointer-events: none;
   user-select: none;
 }

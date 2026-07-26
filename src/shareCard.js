@@ -6,8 +6,8 @@ const CARD_LAYOUT = Object.freeze({
 });
 
 export const SHARE_CARD_REPOSITORY = Object.freeze({
-  label: 'github.com/ringhyacinth/Neko-Generator',
-  url: 'https://github.com/ringhyacinth/Neko-Generator',
+  label: 'github.com/ringhyacinth/Meow-Generator',
+  url: 'https://github.com/ringhyacinth/Meow-Generator',
 });
 
 const CARD_TOTAL = 9999;
@@ -75,7 +75,7 @@ const COPY = Object.freeze({
     close: 'Close',
     saved: 'PNG saved',
     hint: 'Drag the scene to adjust the angle',
-    title: 'Neko keepsake card',
+    title: 'Meow keepsake card',
     skin: 'New skin',
     cardNumber: (serial) => `CARD ${serial} / ${CARD_TOTAL}`,
   },
@@ -88,6 +88,10 @@ function localeCopy(locale) {
 function positiveSeed(seed) {
   const numeric = Number(seed);
   return Number.isFinite(numeric) ? Math.abs(Math.trunc(numeric)) : 0;
+}
+
+export function getShareCardFilename(seed) {
+  return `meow_card_${positiveSeed(seed)}.png`;
 }
 
 function clampChannel(value) {
@@ -474,7 +478,7 @@ function drawCardDecor(ctx, {
   ctx.fillStyle = theme.ink;
   ctx.font = `900 ${40 * scale}px "Arial Rounded MT Bold", "Microsoft YaHei", sans-serif`;
   ctx.textBaseline = 'middle';
-  ctx.fillText('NEKO CARD', cardX + 70 * scale, cardY + 80 * scale);
+  ctx.fillText('MEOW CARD', cardX + 70 * scale, cardY + 80 * scale);
 
   ctx.beginPath();
   ctx.arc(cardX + cardWidth - 86 * scale, cardY + 78 * scale, 39 * scale, 0, Math.PI * 2);
@@ -502,7 +506,7 @@ function drawCardDecor(ctx, {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = `900 ${55 * scale}px "Arial Rounded MT Bold", "Microsoft YaHei", sans-serif`;
-  ctx.fillText('NEKO GENERATOR', cardX + cardWidth / 2, captionY);
+  ctx.fillText('MEOW GENERATOR', cardX + cardWidth / 2, captionY);
   ctx.font = `800 ${29 * scale}px "Arial Rounded MT Bold", "Microsoft YaHei", sans-serif`;
   ctx.fillText(copy.title, cardX + cardWidth / 2, captionY + 52 * scale);
 
@@ -614,11 +618,11 @@ export function createShareCardCapture({
         <span class="share-card-paper share-card-paper--bottom"></span>
         <span class="share-card-paper share-card-paper--left"></span>
         <span class="share-card-window"></span>
-        <span class="share-card-edition">NEKO CARD</span>
+        <span class="share-card-edition">MEOW CARD</span>
         <span class="share-card-gem">✦</span>
         <span class="share-card-star share-card-star--one">✦</span>
         <span class="share-card-star share-card-star--two">★</span>
-        <span class="share-card-live-title">NEKO GENERATOR</span>
+        <span class="share-card-live-title">MEOW GENERATOR</span>
         <span class="share-card-live-subtitle"></span>
         <span class="share-card-serial"></span>
         <span class="share-card-rarity"></span>
@@ -779,7 +783,7 @@ export function createShareCardCapture({
 
       const blob = await new Promise((resolve) => output.toBlob(resolve, 'image/png'));
       if (blob) {
-        downloadBlob(blob, `neko_card_${positiveSeed(getSeed())}.png`);
+        downloadBlob(blob, getShareCardFilename(getSeed()));
         statusEl.textContent = localeCopy(getLocale()).saved;
         viewport.dataset.shareCardCaptured = 'true';
       }
@@ -797,7 +801,7 @@ export function createShareCardCapture({
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && active) close();
   });
-  window.addEventListener('neko:localechange', syncCopy);
+  window.addEventListener('meow:localechange', syncCopy);
 
   return {
     open,

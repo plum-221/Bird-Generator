@@ -1,28 +1,28 @@
 <div align="center">
 
-# Neko Generator
+# Meow Generator
 
 [中文](README.md) · **English** · [日本語](README.ja.md)
 
 A playful procedural 3D kitten generator for shaping bodies, designing coats, playing with toys, changing weather, trying motion, and creating collectible cards.
 
-[Live Demo](https://ringhyacinth.github.io/Neko-Generator/) · [Report an Issue](https://github.com/ringhyacinth/Neko-Generator/issues)
+[Live Demo](https://ringhyacinth.github.io/Meow-Generator/) · [Report an Issue](https://github.com/ringhyacinth/Meow-Generator/issues)
 
 </div>
 
-![Neko Generator interface and collectible kitten card in Chinese, Japanese, and English](docs/screenshot.png)
+![Meow Generator interface and collectible kitten card in Chinese, Japanese, and English](docs/screenshot.png)
 
-## About Neko Generator
+## About Meow Generator
 
-**Neko Generator** is co-created by **Simon_阿文 (Simon Lee)** and **Ring Hyacinth (海辛)**. Every kitten is procedurally generated from a seed and editable parameters. Reusing the same seed recreates the same body, coat, pose, toys, rug, collection number, and rarity.
+**Meow Generator** is co-created by **Simon_阿文 (Simon Lee)** and **Ring Hyacinth (海辛)**. Every kitten is procedurally generated from a seed and editable parameters. Reusing the same seed recreates the same body, coat, pose, toys, rug, collection number, and rarity.
 
 The project is a local-first browser experience. It requires no account and has no backend service.
 
 ## Inspiration
 
-![The real orange-and-white kitten that inspired Neko Generator, resting on a round scratcher among fish toys, woven rugs, and colorful cat furniture](docs/inspiration.jpg)
+![The real orange-and-white kitten that inspired Meow Generator, resting on a round scratcher among fish toys, woven rugs, and colorful cat furniture](docs/inspiration.jpg)
 
-Neko Generator began with a real kitten in our everyday life. Its rounded body and curled resting pose—together with the scratcher, fish toys, woven rugs, and bright household colors—became the starting point for the project’s character shapes, scenes, toys, and palette.
+Meow Generator began with a real kitten in our everyday life. Its rounded body and curled resting pose—together with the scratcher, fish toys, woven rugs, and bright household colors—became the starting point for the project’s character shapes, scenes, toys, and palette.
 
 ## Features
 
@@ -105,7 +105,7 @@ The app has no backend. Runtime state and exports remain in the browser or on th
 
 ## Creators
 
-Neko Generator is made by Simon_阿文 (Simon Lee) and Ring Hyacinth.
+Meow Generator is made by Simon_阿文 (Simon Lee) and Ring Hyacinth.
 
 ### Simon_阿文 (Simon Lee)
 

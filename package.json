@@ -1,8 +1,8 @@
 {
-  "name": "neko-generator",
+  "name": "meow-generator",
   "version": "0.1.0",
   "private": true,
-  "description": "Neko Generator — a playful procedural 3D kitten creator built with Three.js",
+  "description": "Meow Generator — a playful procedural 3D kitten creator built with Three.js",
   "type": "module",
   "scripts": {
     "dev": "vite --port 8791",

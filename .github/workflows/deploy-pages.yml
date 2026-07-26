@@ -1,4 +1,4 @@
-name: Deploy Neko Generator to GitHub Pages
+name: Deploy Meow Generator to GitHub Pages
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
       - name: Build GitHub Pages site
         run: npm run build
         env:
-          VITE_PUBLIC_BASE: /Neko-Generator/
+          VITE_PUBLIC_BASE: /Meow-Generator/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'neko-generator-locale';
+const STORAGE_KEY = 'meow-generator-locale';
 const SUPPORTED_LOCALES = new Set(['zh-CN', 'ja-JP', 'en']);
 
 const COPY = {
@@ -249,12 +249,12 @@ export function setLocale(locale) {
   activeLocale = normalizedLocale(locale);
   localStorage.setItem(STORAGE_KEY, activeLocale);
   document.documentElement.lang = activeLocale;
-  document.title = 'Neko Generator';
+  document.title = 'Meow Generator';
   translating = true;
   translateSubtree(document.body);
   translating = false;
   refreshLocaleButtons();
-  window.dispatchEvent(new CustomEvent('neko:localechange', { detail: { locale: activeLocale } }));
+  window.dispatchEvent(new CustomEvent('meow:localechange', { detail: { locale: activeLocale } }));
 }
 
 export function initI18n() {

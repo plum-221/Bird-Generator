@@ -1,28 +1,28 @@
 <div align="center">
 
-# Neko Generator
+# Meow Generator
 
 **中文** · [English](README.en.md) · [日本語](README.ja.md)
 
 一个可以捏体型、换花色、玩玩具、切换天气、尝试动作并生成收藏卡片的程序化 3D 小猫工具。
 
-[在线体验](https://ringhyacinth.github.io/Neko-Generator/) · [反馈问题](https://github.com/ringhyacinth/Neko-Generator/issues)
+[在线体验](https://ringhyacinth.github.io/Meow-Generator/) · [反馈问题](https://github.com/ringhyacinth/Meow-Generator/issues)
 
 </div>
 
-![Neko Generator 中文、日文与英文界面及小猫收藏卡片](docs/screenshot.png)
+![Meow Generator 中文、日文与英文界面及小猫收藏卡片](docs/screenshot.png)
 
-## 关于 Neko Generator
+## 关于 Meow Generator
 
-**Neko Generator** 由 **Simon_阿文（Simon Lee）** 与 **海辛（Ring Hyacinth）** 共同创作。每只小猫都由种子和可编辑参数程序化生成；相同种子可以重新生成相同的小猫体型、花色、姿势、玩具、垫子、收藏编号与稀有度。
+**Meow Generator** 由 **Simon_阿文（Simon Lee）** 与 **海辛（Ring Hyacinth）** 共同创作。每只小猫都由种子和可编辑参数程序化生成；相同种子可以重新生成相同的小猫体型、花色、姿势、玩具、垫子、收藏编号与稀有度。
 
 项目采用本地优先的浏览器体验，不需要登录账号，也没有后端服务。
 
 ## 灵感来源
 
-![Neko Generator 的灵感来源：躺在圆形猫抓板上的真实橘白小猫与周围的鱼玩具、编织地毯和猫咪用品](docs/inspiration.jpg)
+![Meow Generator 的灵感来源：躺在圆形猫抓板上的真实橘白小猫与周围的鱼玩具、编织地毯和猫咪用品](docs/inspiration.jpg)
 
-Neko Generator 的灵感来自我们身边真实的小猫。它圆润的身体、蜷坐的姿态，以及猫抓板、鱼玩具、编织地毯与明亮配色，共同成为项目在造型、场景、玩具和色彩设计上的起点。
+Meow Generator 的灵感来自我们身边真实的小猫。它圆润的身体、蜷坐的姿态，以及猫抓板、鱼玩具、编织地毯与明亮配色，共同成为项目在造型、场景、玩具和色彩设计上的起点。
 
 ## 主要功能
 
@@ -40,7 +40,7 @@ Neko Generator 的灵感来自我们身边真实的小猫。它圆润的身体�
 
 ## 小猫收藏卡片
 
-点击 **留影 PNG** 后，Neko Generator 会读取当前小猫的底色、主辅花纹色和眼睛颜色，为它生成专属的默认卡面。
+点击 **留影 PNG** 后，Meow Generator 会读取当前小猫的底色、主辅花纹色和眼睛颜色，为它生成专属的默认卡面。
 
 每只小猫都会获得：
 
@@ -105,7 +105,7 @@ Motion 测试覆盖 14 段动画、19 根骨骼、蒙皮权重、状态机输入
 
 ## 创作者
 
-Neko Generator 由 Simon_阿文与海辛共同制作。
+Meow Generator 由 Simon_阿文与海辛共同制作。
 
 ### Simon_阿文（Simon Lee）
 
