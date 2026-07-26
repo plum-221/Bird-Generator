@@ -31,6 +31,7 @@ The project is a local-first browser experience. It requires no account and has 
 - Physics toys including fish, ducks, yarn balls, cat beds, and more
 - Sunny, cloudy, thunder, rain, and fish-rain scene states
 - GLB export and collectible PNG kitten cards
+- Experimental Codex pet handoff export
 - Chinese, English, and Japanese interfaces
 - Desktop and mobile layouts
 
@@ -45,6 +46,17 @@ Each kitten receives:
 - a default palette sampled from the kitten itself
 - optional dot, check, confetti, and wave themes through **Change Skin**
 - the public repository address printed on the exported PNG so the project can be found again
+
+## Export for Codex (Experimental)
+
+Select **🐾 Export for Codex** to prepare:
+
+- a parameter JSON preserving the kitten’s body, coat, eyes, and colors
+- a reference PNG showing its final appearance
+- a ready-to-copy creation and installation prompt for Codex
+- a preview of the validated orange-kitten motion prototype
+
+This entry only prepares the handoff files; it does not open or wake Codex automatically. Send the JSON, PNG, and copied prompt to Codex together. After the motion atlas is generated, review the motion overview and left/right directions before installing it as a new independent pet, so existing pets remain untouched.
 
 ## Run Locally
 
@@ -94,6 +106,7 @@ The Motion test covers all 14 animation clips, the 19-bone rig, skin weights, st
 - `src/toys.js` — Cannon-es toy physics and grabbing
 - `src/weather.js` — weather, lightning, rain, clouds, and falling fish
 - `src/shareCard.js` — collectible card themes and PNG generation
+- `src/codexPetPreview.js` — Codex pet parameters, reference image, and prompt export
 - `src/mesh2motion*.js` — motion sampling, retargeting, rigging, and skinning
 - `src/i18n.js` — Chinese, English, and Japanese interface copy
 

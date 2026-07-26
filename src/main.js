@@ -16,6 +16,7 @@ import { createRandomBgm } from './bgm.js';
 import { initI18n } from './i18n.js';
 import { createShareCardCapture } from './shareCard.js';
 import { createSpeechBubbleController } from './speechBubbles.js';
+import { createCodexPetPreview } from './codexPetPreview.js';
 import {
   WEATHER_AMOUNT_LIMITS,
   createCloudField,
@@ -2704,6 +2705,20 @@ document.getElementById('btn-export-glb').addEventListener('click', () => {
 document.getElementById('btn-export-png').addEventListener('click', () => {
   if (shareCardCapture.active) shareCardCapture.close();
   else shareCardCapture.open();
+});
+
+createCodexPetPreview({
+  trigger: document.getElementById('btn-codex-pet'),
+  capturePreview: () => canvas.toDataURL('image/png'),
+  getPetDescriptor: () => ({
+    schema: 'meow-generator/codex-pet-draft@1',
+    name: `Meow #${params.seed}`,
+    seed: params.seed,
+    createdAt: new Date().toISOString(),
+    status: 'experimental',
+    generator: 'Meow Generator',
+    parameters: { ...params },
+  }),
 });
 
 // Mobile uses a compact, tabbed parameter console instead of stacking every
