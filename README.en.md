@@ -20,12 +20,6 @@ A playful procedural 3D kitten generator for shaping bodies, designing coats, pl
 
 The project is a local-first browser experience. It requires no account and has no backend service.
 
-## Inspiration
-
-![The real orange-and-white kitten that inspired Meow Generator, resting on a round scratcher among fish toys, woven rugs, and colorful cat furniture](docs/inspiration.jpg)
-
-Meow Generator began with a real kitten in our everyday life. Its rounded body and curled resting pose—together with the scratcher, fish toys, woven rugs, and bright household colors—became the starting point for the project’s character shapes, scenes, toys, and palette.
-
 ## Features
 
 - Procedural SDF body with adjustable proportions, roundness, legs, ears, tail, and fluff
@@ -138,3 +132,9 @@ Because it restricts commercial use, this is a noncommercial source-available li
 The web version is an actively developed creative-tool prototype. The Motion section is explicitly experimental. Extreme body parameters, long-running WebGL sessions, and mobile performance may vary by device.
 
 Reproducible bug reports and feedback are welcome.
+
+## Inspiration
+
+![The real orange-and-white kitten that inspired Meow Generator, resting on a round scratcher among fish toys, woven rugs, and colorful cat furniture](docs/inspiration.jpg)
+
+Meow Generator began with a real kitten in our everyday life. Its rounded body and curled resting pose—together with the scratcher, fish toys, woven rugs, and bright household colors—became the starting point for the project’s character shapes, scenes, toys, and palette.
