@@ -180,13 +180,6 @@ function addFace(headRig, headRadius, params, materials) {
     addEye(face, 1, headRadius, materials.eyeRight, params.eyeSize),
   ];
 
-  for (const side of [-1, 1]) {
-    const cheek = new THREE.Mesh(new THREE.CircleGeometry(headRadius * 0.12, 18), materials.cheekFlat);
-    cheek.name = side < 0 ? 'leftCheek' : 'rightCheek';
-    cheek.position.set(side * headRadius * 0.53, -headRadius * 0.20, headRadius * 0.94);
-    cheek.scale.set(1.05, 0.72, 1);
-    face.add(cheek);
-  }
 
   for (const side of [-1, 1]) {
     for (let i = 0; i < 3; i++) {
@@ -264,7 +257,6 @@ export function buildBird(rawParams, quality = 'full') {
   const materials = {
     body: toon(plumage.base), wing: toon(plumage.wing), featherEdge: toon(plumage.featherEdge || plumage.chest),
     tail: toon(plumage.tail || plumage.wing), stripe: toon(plumage.stripe), marking: toon(plumage.marking || plumage.stripe),
-    cheekFlat: new THREE.MeshBasicMaterial({ color: plumage.cheek, transparent: true, opacity: 0.58, depthWrite: false }),
     cere: toon(plumage.cere), beak: toon(plumage.beak),
     beakShadow: toon(plumage.beakShadow || '#c89532'), foot: toon(plumage.foot || '#aa9c9c'),
     eyeLeft: toon(eyeLeftColor), eyeRight: toon(eyeRightColor), throatDot: toon(plumage.throatDot || '#8e8985'),

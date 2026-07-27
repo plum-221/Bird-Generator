@@ -19,8 +19,8 @@ for (const required of [
 
 assert.equal(bird.userData.birdParts.eyeGroups.length, 2);
 assert.ok(bird.userData.birdParts.face, 'face must move with the head');
-assert.equal(bird.getObjectByName('leftCheek')?.geometry.type, 'CircleGeometry', 'cheek color must be flat');
-assert.equal(bird.getObjectByName('rightCheek')?.geometry.type, 'CircleGeometry', 'cheek color must be flat');
+assert.ok(!bird.getObjectByName('leftCheek'), 'left cheek geometry must be removed');
+assert.ok(!bird.getObjectByName('rightCheek'), 'right cheek geometry must be removed');
 assert.equal([...names].filter((name) => name.includes('ThroatDot')).length, 0, 'decorative throat dots must be removed');
 assert.ok(bird.userData.visualProfile, 'bird must publish visual profile metadata');
 assert.equal(bird.userData.visualProfile.species, 'budgerigar');
