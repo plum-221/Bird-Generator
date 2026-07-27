@@ -53,13 +53,27 @@ function capsuleBetween(a, b, radius, segments, material, parent, name) {
 function createWingGeometry() {
   const shape = new THREE.Shape();
   shape.moveTo(0, 0);
-  shape.bezierCurveTo(0.21, -0.04, 0.24, -0.34, 0.08, -0.53);
-  shape.bezierCurveTo(0.02, -0.60, -0.04, -0.60, -0.09, -0.52);
-  shape.bezierCurveTo(-0.23, -0.28, -0.19, -0.05, 0, 0);
+  shape.bezierCurveTo(0.12, -0.025, 0.19, -0.15, 0.27, -0.24);
+  shape.bezierCurveTo(0.34, -0.31, 0.30, -0.38, 0.19, -0.40);
+  shape.bezierCurveTo(0.055, -0.42, -0.018, -0.29, 0.002, -0.14);
+  shape.bezierCurveTo(0.012, -0.065, -0.008, -0.018, 0, 0);
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.06, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.016, bevelThickness: 0.016,
+    depth: 0.038, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.012, bevelThickness: 0.012,
   });
-  geometry.translate(0, 0, -0.03);
+  geometry.translate(0, 0, -0.019);
+  return geometry;
+}
+
+function createWingFeatherGeometry(length, width) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.bezierCurveTo(width * 0.30, -length * 0.08, width * 0.78, -length * 0.48, width, -length * 0.66);
+  shape.bezierCurveTo(width * 0.78, -length * 0.88, width * 0.34, -length, 0, -length);
+  shape.bezierCurveTo(-width * 0.08, -length * 0.66, -width * 0.05, -length * 0.18, 0, 0);
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.014, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: 0.004, bevelThickness: 0.004,
+  });
+  geometry.translate(0, 0, -0.007);
   return geometry;
 }
 
@@ -79,24 +93,22 @@ function addWing(parent, side, root, scale, materials, nearSide) {
   const wing = new THREE.Group();
   wing.name = side < 0 ? 'leftWing' : 'rightWing';
   wing.position.copy(root);
-  wing.rotation.z = side * -0.035;
-  wing.rotation.y = side * 0.08;
-  wing.scale.set(scale * 1.16, scale, scale);
+  wing.rotation.y = Math.PI * 0.5 - side * 0.28;
+  wing.scale.setScalar(scale);
   parent.add(wing);
 
-  addOutlined(wing, createWingGeometry(), materials.wing, 'wingShell', {
-    scale: [side, 1, 1],
-  });
-  for (let i = 0; i < 4; i++) {
-    const line = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.008, 0.13 + i * 0.022, 3, 7),
-      i === 0 ? materials.stripe : materials.featherEdge
-    );
-    line.name = `wingFeather${i}`;
-    line.position.set(side * (0.035 + i * 0.025), -0.26 - i * 0.048, 0.058);
-    line.rotation.z = side * (0.14 + i * 0.035);
-    wing.add(line);
-  }
+  addOutlined(wing, createWingGeometry(), materials.wing, 'wingShell');
+  const prefix = side < 0 ? 'left' : 'right';
+  addOutlined(wing, createWingFeatherGeometry(0.29, 0.13), materials.featherEdge, `${prefix}WingFeatherPrimary`, {
+    position: V(0.040, -0.065, side * 0.040),
+    rotation: [0, 0, -0.035],
+  }, 1.012);
+  addOutlined(wing, createWingFeatherGeometry(0.21, 0.09), materials.stripe, `${prefix}WingFeatherSecondary`, {
+    position: V(0.055, -0.075, side * 0.050),
+    rotation: [0, 0, -0.055],
+  }, 1.012);
+  wing.userData.design = 'compact-leaf';
+  wing.userData.foldedPlane = 'side-back';
   wing.userData.isNearSide = nearSide;
   return wing;
 }
@@ -125,26 +137,37 @@ function addTail(parent, root, params, materials) {
 
 function addFoot(parent, side, hip, floorY, materials, segments) {
   const prefix = side < 0 ? 'left' : 'right';
-  const ankle = V(side * 0.13, floorY + 0.048, 0.075);
-  const leg = capsuleBetween(hip, ankle, 0.021, Math.max(7, segments / 2), materials.foot, parent, `${prefix}Leg`);
+  const footMaterial = side < 0 ? materials.footFar : materials.foot;
+  const toeTipMaterial = side < 0 ? materials.footTipFar : materials.footTip;
+  const ankle = V(hip.x * 1.05, floorY + 0.055, 0.075);
+  const leg = capsuleBetween(hip, ankle, 0.024, Math.max(7, segments / 2), footMaterial, parent, `${prefix}Leg`);
   const foot = new THREE.Group();
   foot.name = `${prefix}Foot`;
   parent.add(foot);
+
+  addOutlined(foot, new THREE.SphereGeometry(0.036, 12, 8), footMaterial, `${prefix}FootPalm`, {
+    position: ankle,
+    scale: [1.12, 0.62, 1.38],
+  }, 1.025);
 
   const toes = [
     ['ToeFrontOuter', side * 0.042, 0.155], ['ToeFrontInner', side * -0.018, 0.132],
     ['ToeBackOuter', side * 0.044, -0.105], ['ToeBackInner', side * -0.016, -0.09],
   ];
   for (const [suffix, dx, dz] of toes) {
+    const tip = V(ankle.x + dx, floorY + 0.014, ankle.z + dz);
+    const mid = ankle.clone().lerp(tip, 0.58);
+    mid.y = floorY + 0.034;
     capsuleBetween(
       ankle,
-      V(ankle.x + dx, floorY + 0.014, ankle.z + dz),
-      0.0105,
+      mid,
+      0.014,
       6,
-      materials.foot,
+      footMaterial,
       foot,
       `${prefix}${suffix}`
     );
+    capsuleBetween(mid, tip, 0.011, 6, toeTipMaterial, foot, `${prefix}${suffix}Tip`);
   }
   return leg;
 }
@@ -174,6 +197,8 @@ function addEye(face, side, headRadius, material, eyeSize) {
 function addFace(headRig, headRadius, params, materials) {
   const face = new THREE.Group();
   face.name = 'face';
+  face.position.z = 0.012 + Math.max(0, 0.255 - headRadius) * 0.35;
+  face.userData.surfaceOffset = face.position.z;
   headRig.add(face);
   const eyeGroups = [
     addEye(face, -1, headRadius, materials.eyeLeft, params.eyeSize),
@@ -219,14 +244,36 @@ function addFace(headRig, headRadius, params, materials) {
   return { face, eyeGroups };
 }
 
-function createBodyPrimitives(params, headC, headRadius) {
+function deriveBirdAnatomy(params) {
   const fluff = params.fluffy ? params.furFluff : 0.3;
   const width = 0.94 + (params.chubbiness - 1) * 0.16 + fluff * 0.014;
+  const bodyLift = (params.legLength - 0.9) * 0.13;
+  const headRadius = 0.255 * params.headSize;
+  const headC = V(0, 0.86 + bodyLift + headRadius * 0.59, 0.045);
+  return {
+    fluff,
+    width,
+    bodyLift,
+    headRadius,
+    headC,
+    wingScale: (0.86 + (params.earSize - 1) * 0.30) * (0.98 + (width - 1) * 0.12),
+    attachments: {
+      leftWingRoot: V(-0.310 * width, 0.79 + bodyLift + (headRadius - 0.270) * 0.12, 0.015),
+      rightWingRoot: V(0.310 * width, 0.79 + bodyLift + (headRadius - 0.270) * 0.12, 0.015),
+      tailRoot: V(0, 0.56 + bodyLift, -0.285 * width),
+      leftHip: V(-0.123 * width, 0.225 + bodyLift, 0.005),
+      rightHip: V(0.123 * width, 0.225 + bodyLift, 0.005),
+    },
+  };
+}
+
+function createBodyPrimitives(params, anatomy) {
+  const { bodyLift, headC, headRadius, width } = anatomy;
   const prims = [];
   const P = (primitive) => prims.push(primitive);
-  P(sphere({ c: V(0, 0.48, 0), r: 0.37, s: [1.02 * width, 1.02, 0.76 * width], k: 0.16, tag: 'belly' }));
-  P(sphere({ c: V(0, 0.69, 0.035), r: 0.32, s: [0.93 * width, 1.10, 0.74 * width], k: 0.17, tag: 'chest' }));
-  P(sphere({ c: V(0, 0.86, 0.02), r: 0.25, s: [0.90 * width, 0.96, 0.78 * width], k: 0.16, tag: 'neck' }));
+  P(sphere({ c: V(0, 0.48 + bodyLift, 0), r: 0.37, s: [1.02 * width, 1.02, 0.76 * width], k: 0.16, tag: 'belly' }));
+  P(sphere({ c: V(0, 0.69 + bodyLift, 0.035), r: 0.32, s: [0.93 * width, 1.10, 0.74 * width], k: 0.17, tag: 'chest' }));
+  P(sphere({ c: V(0, 0.86 + bodyLift, 0.02), r: 0.25, s: [0.90 * width, 0.96, 0.78 * width], k: 0.16, tag: 'neck' }));
   P(sphere({ c: headC, r: headRadius, s: [1, 1.06, 0.93], k: 0.18, tag: 'head' }));
   P(sphere({ c: V(0, headC.y + headRadius * 0.62, headC.z - 0.01), r: headRadius * 0.58, s: [1.18, 0.78, 1], k: 0.13, tag: 'crown' }));
   return prims;
@@ -241,15 +288,8 @@ export function buildBird(rawParams, quality = 'full') {
   const root = new THREE.Group();
   root.name = 'bird';
 
-  const headRadius = 0.255 * params.headSize;
-  const headC = V(0, 1.02, 0.045);
-  const attachments = {
-    leftWingRoot: V(-0.285, 0.79, -0.005),
-    rightWingRoot: V(0.285, 0.79, -0.005),
-    tailRoot: V(0, 0.56, -0.285),
-    leftHip: V(-0.12, 0.225, 0.005),
-    rightHip: V(0.12, 0.225, 0.005),
-  };
+  const anatomy = deriveBirdAnatomy(params);
+  const { headRadius, headC, attachments } = anatomy;
   const eyeLeftColor = params.eyeColor || '#171716';
   const eyeRightColor = params.oddEyes ? params.eyeColorRight : eyeLeftColor;
   const materials = {
@@ -257,10 +297,13 @@ export function buildBird(rawParams, quality = 'full') {
     tail: toon(plumage.tail || plumage.wing), stripe: toon(plumage.stripe), marking: toon(plumage.marking || plumage.stripe),
     cere: toon(plumage.cere), beak: toon(plumage.beak),
     beakShadow: toon(plumage.beakShadow || '#c89532'), foot: toon(plumage.foot || '#aa9c9c'),
+    footFar: toon(new THREE.Color(plumage.foot || '#aa9c9c').multiplyScalar(0.78).getStyle()),
+    footTip: toon(new THREE.Color(plumage.foot || '#aa9c9c').multiplyScalar(0.68).getStyle()),
+    footTipFar: toon(new THREE.Color(plumage.foot || '#aa9c9c').multiplyScalar(0.54).getStyle()),
     eyeLeft: toon(eyeLeftColor), eyeRight: toon(eyeRightColor), throatDot: toon(plumage.throatDot || '#8e8985'),
   };
 
-  const prims = createBodyPrimitives(params, headC, headRadius);
+  const prims = createBodyPrimitives(params, anatomy);
   const cellSize = quality === 'draft' ? 0.064 : 0.042;
   const bodyGeometry = meshFromSDF(prims, cellSize, -0.12);
   bodyGeometry.userData.meshCellSize = cellSize;
@@ -287,12 +330,11 @@ export function buildBird(rawParams, quality = 'full') {
 
   const chest = new THREE.Group();
   chest.name = 'chest';
-  chest.position.set(0, 0.68, 0.21);
+  chest.position.set(0, 0.68 + anatomy.bodyLift, 0.21);
   visible.add(chest);
 
-  const wingScale = 0.84 + (params.earSize - 1) * 0.26;
-  const leftWing = addWing(visible, -1, attachments.leftWingRoot.clone().add(V(0, -0.03, -0.015)), wingScale, materials, false);
-  const rightWing = addWing(visible, 1, attachments.rightWingRoot.clone().add(V(0, -0.03, 0.15)), wingScale, materials, true);
+  const leftWing = addWing(visible, -1, attachments.leftWingRoot, anatomy.wingScale, materials, false);
+  const rightWing = addWing(visible, 1, attachments.rightWingRoot, anatomy.wingScale, materials, true);
   const tail = addTail(visible, attachments.tailRoot, params, materials);
 
   const feet = new THREE.Group();
@@ -341,7 +383,7 @@ export function buildBird(rawParams, quality = 'full') {
   root.userData.buttC = attachments.tailRoot.clone();
   root.userData.attachments = Object.fromEntries(Object.entries(attachments).map(([key, value]) => [key, value.clone()]));
   root.userData.colliders = [
-    { c: V(0, 0.56, 0), r: 0.37 },
+    { c: V(0, 0.56 + anatomy.bodyLift, 0), r: 0.37 * anatomy.width },
     { c: headC.clone(), r: headRadius },
   ];
   root.userData.visualProfile = {

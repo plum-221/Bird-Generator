@@ -58,4 +58,70 @@ const shoulderWidth = widthInBand(0.72, 0.86);
 const lowerChestWidth = widthInBand(0.58, 0.72);
 assert.ok(shoulderWidth <= lowerChestWidth * 1.02, `shoulder contour must taper smoothly, got ${shoulderWidth.toFixed(3)} vs ${lowerChestWidth.toFixed(3)}`);
 
+const leftWing = bird.getObjectByName('leftWing');
+const rightWing = bird.getObjectByName('rightWing');
+assert.equal(leftWing.userData.design, 'compact-leaf', 'left wing must use compact leaf design');
+assert.equal(rightWing.userData.design, 'compact-leaf', 'right wing must use compact leaf design');
+assert.equal(leftWing.userData.foldedPlane, 'side-back', 'folded wing must lie on the body side');
+assert.ok(bird.getObjectByName('leftWingFeatherPrimary'), 'wing must contain a shaped primary feather panel');
+assert.ok(bird.getObjectByName('leftWingFeatherSecondary'), 'wing must contain a shaped secondary feather panel');
+assert.ok(!bird.getObjectByName('wingFeather0'), 'capsule wing stripes must be removed');
+
+for (const side of ['left', 'right']) {
+  const palm = bird.getObjectByName(`${side}FootPalm`);
+  const toe = bird.getObjectByName(`${side}ToeFrontOuter`);
+  const toeTip = bird.getObjectByName(`${side}ToeFrontOuterTip`);
+  assert.ok(palm, `${side} foot must include a stylized palm connector`);
+  assert.equal(toe.material.type, 'MeshToonMaterial', `${side} toes must use toon shading`);
+  assert.equal(toeTip.material.type, 'MeshToonMaterial', `${side} toe tips must use toon shading`);
+  assert.notEqual(toeTip.material.color.getHex(), toe.material.color.getHex(), `${side} toe tips must form a darker toon block`);
+  assert.ok(bird.getObjectByName(`${side}ToeFrontOuterOutline`), `${side} toes must keep a visible outline`);
+}
+
+const makeBird = (overrides) => {
+  const model = buildBird({ ...DEFAULT_BIRD_PARAMS, ...overrides }, 'draft');
+  model.updateMatrixWorld(true);
+  return model;
+};
+const slim = makeBird({ chubbiness: 0.6, furFluff: 0.15 });
+const round = makeBird({ chubbiness: 2.2, furFluff: 2.4 });
+assert.ok(
+  Math.abs(round.userData.attachments.rightWingRoot.x) > Math.abs(slim.userData.attachments.rightWingRoot.x) + 0.025,
+  'wing roots must follow body width'
+);
+assert.ok(
+  Math.abs(round.userData.attachments.rightHip.x) > Math.abs(slim.userData.attachments.rightHip.x) + 0.01,
+  'hips must follow body width'
+);
+assert.ok(
+  Math.abs(round.userData.attachments.tailRoot.z) > Math.abs(slim.userData.attachments.tailRoot.z) + 0.02,
+  'tail root must follow body depth'
+);
+
+const smallHead = makeBird({ headSize: 0.65 });
+const largeHead = makeBird({ headSize: 1.65 });
+assert.ok(largeHead.userData.headC.y > smallHead.userData.headC.y + 0.1, 'head center must rise as head radius grows');
+assert.ok(
+  smallHead.userData.birdParts.face.userData.surfaceOffset > largeHead.userData.birdParts.face.userData.surfaceOffset + 0.02,
+  'small heads must push face details forward to remain on the surface'
+);
+
+const shortLegs = makeBird({ legLength: 0.45 });
+const longLegs = makeBird({ legLength: 1.8 });
+assert.ok(
+  longLegs.userData.attachments.leftHip.y > shortLegs.userData.attachments.leftHip.y + 0.12,
+  'leg length must change the hip-to-floor distance'
+);
+for (const model of [shortLegs, longLegs]) {
+  const footBounds = new Box3().setFromObject(model.userData.birdParts.feet);
+  assert.ok(Math.abs(footBounds.min.y) < 0.02, `feet must stay grounded, got y=${footBounds.min.y.toFixed(3)}`);
+}
+
+const smallWings = makeBird({ earSize: 0.55 });
+const largeWings = makeBird({ earSize: 1.8 });
+assert.ok(
+  largeWings.getObjectByName('leftWing').scale.x > smallWings.getObjectByName('leftWing').scale.x + 0.3,
+  'wing size control must scale the compact wing without moving its root'
+);
+
 console.log({ status: 'ok', parts: names.size, silhouette: [size.x, size.y, size.z].map((v) => Number(v.toFixed(3))) });

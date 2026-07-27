@@ -1,5 +1,6 @@
 node_modules/
 artifacts/
+.superpowers/
 dist/
 参考图/
 *.log
