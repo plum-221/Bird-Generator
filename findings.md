@@ -110,3 +110,4 @@
 - 新增结构断言：左右腮部必须为平面圆形，且场景中不得存在 `ThroatDot` 节点。
 - 旧实现首次运行新断言时按预期失败，实际类型为 `SphereGeometry`；完成替换后测试通过。
 - GitHub Pages 运行 `30269806145` 成功；线上缓存破坏参数下确认平面腮色与简洁脸部已生效。
+- PowerShell 对 `gh run list` 的彩色 JSON 输出执行 `ConvertFrom-Json` 会失败；后续直接使用 `gh --jq` 取运行编号。
