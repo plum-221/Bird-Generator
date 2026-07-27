@@ -332,6 +332,36 @@ export function createToyWorld(scene) {
     addToy(mesh, body, r + 0.008, 'ball');
   }
 
+  // ---- 鹦鹉铃铛 x2：可抓取、可投掷 -------------------------------------
+  for (const definition of [
+    { color: '#f0b94f', accent: '#d77b55', pos: [0.62, 0.42, -0.82] },
+    { color: '#73b8b1', accent: '#e59a70', pos: [-0.58, 0.42, -0.96] },
+  ]) {
+    const bell = new THREE.Group();
+    bell.name = 'birdBell';
+    const shellGeo = new THREE.SphereGeometry(0.13, 22, 14);
+    shellGeo.scale(1, 1.08, 0.92);
+    const shell = new THREE.Mesh(shellGeo, toonMat(definition.color, grad));
+    const openingGeo = new THREE.TorusGeometry(0.095, 0.018, 8, 24);
+    const opening = new THREE.Mesh(openingGeo, toonMat(definition.accent, grad));
+    opening.rotation.x = Math.PI / 2;
+    opening.position.y = -0.1;
+    const clapperGeo = new THREE.SphereGeometry(0.035, 12, 9);
+    const clapper = new THREE.Mesh(clapperGeo, toonMat('#6f5144', grad));
+    clapper.position.y = -0.145;
+    const loopGeo = new THREE.TorusGeometry(0.045, 0.012, 7, 18);
+    const loop = new THREE.Mesh(loopGeo, toonMat(definition.accent, grad));
+    loop.position.y = 0.15;
+    bell.add(shell, outlineOf(shellGeo, 0.008), opening, clapper, loop);
+    const body = new CANNON.Body({
+      mass: 0.18, material: mat,
+      shape: new CANNON.Sphere(0.145),
+      position: new CANNON.Vec3(...definition.pos),
+      linearDamping: 0.24, angularDamping: 0.2,
+    });
+    addToy(bell, body, 0.15, 'bell');
+  }
+
   // ---- 小鱼布偶 x3 --------------------------------------------------------
   // 椭圆身体、三角尾鳍与小眼睛都使用 Toon + 反壳描边；刚体可抓取和碰撞。
   const fishDefs = [
@@ -609,6 +639,7 @@ export function createToyWorld(scene) {
       ball: [0.72, 2],
       fish: [0.7, 1.95],
       duck: [0.68, 1.9],
+      bell: [0.72, 1.85],
     };
 
     for (const toy of toys) {

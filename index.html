@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="application-name" content="Meow Generator" />
-  <meta name="apple-mobile-web-app-title" content="Meow Generator" />
-  <meta name="description" content="A playful procedural 3D kitten generator built with Three.js." />
-  <meta property="og:title" content="Meow Generator" />
-  <meta property="og:description" content="Create, customize, animate, and capture your own procedural 3D kitten." />
-  <title>Meow Generator</title>
+  <meta name="application-name" content="Bird Generator" />
+  <meta name="apple-mobile-web-app-title" content="Bird Generator" />
+  <meta name="description" content="A playful procedural 3D budgie generator built with Three.js." />
+  <meta property="og:title" content="Bird Generator" />
+  <meta property="og:description" content="Create, customize, animate, and capture your own procedural 3D bird." />
+  <title>Bird Generator</title>
   <link
     rel="preload"
-    href="/src/assets/loading/cat-can-transparent.png"
+    href="/src/assets/brand/bird-mascot.png"
     as="image"
     fetchpriority="high"
   />
@@ -29,14 +29,14 @@
     class="initial-loader"
     role="status"
     aria-live="polite"
-    aria-label="小猫罐头正在准备画布"
+    aria-label="白色小鹦鹉正在准备画布"
   >
     <div class="initial-loader__content">
       <div class="initial-loader__mascot" aria-hidden="true">
         <span class="initial-loader__glow"></span>
         <img
           class="initial-loader__cat"
-          src="/src/assets/loading/cat-can-transparent.png"
+          src="/src/assets/brand/bird-mascot.png"
           alt=""
           width="400"
           height="449"
@@ -137,7 +137,7 @@
             <button type="button" class="weather-chip active" data-weather="sunny" aria-label="晴天" aria-pressed="true">☀️ 晴天</button>
             <button type="button" class="weather-chip" data-weather="cloudy" aria-label="阴天" aria-pressed="false">☁️ 阴天</button>
             <button type="button" class="weather-chip" data-weather="thunder" aria-label="打雷" aria-pressed="false" title="可与阴天或下雨叠加">⚡ 打雷</button>
-            <button type="button" class="weather-chip" data-weather="fishRain" aria-label="下雨" aria-pressed="false" title="雨量和落鱼量可分别调整">🌧️ 下雨</button>
+            <button type="button" class="weather-chip" data-weather="fishRain" aria-label="下雨" aria-pressed="false" title="雨量和谷子量可分别调整">🌧️ 下雨</button>
           </div>
           <div class="weather-parameters" aria-label="天气参数" hidden>
             <label class="weather-parameter" for="weather-rain-amount">
@@ -151,7 +151,7 @@
               <output id="weather-cloud-value" for="weather-cloud-amount">1.00</output>
             </label>
             <label class="weather-parameter" for="weather-fish-amount">
-              <span>鱼量</span>
+              <span>谷子量</span>
               <input id="weather-fish-amount" type="range" min="0" max="4" step="0.05" value="1">
               <output id="weather-fish-value" for="weather-fish-amount">1.00</output>
             </label>
@@ -179,7 +179,7 @@
           <span class="mobile-panel-toggle__chevron" aria-hidden="true">⌄</span>
         </button>
         <div class="panel-actions">
-          <button id="btn-random" class="btn primary">🐾 随机遇见小猫</button>
+          <button id="btn-random" class="btn primary">🪶 随机遇见小鸟</button>
           <div class="btn-row">
             <button id="btn-export-glb" class="btn">带走 GLB</button>
             <button id="btn-export-png" class="btn">留影 PNG</button>
@@ -190,7 +190,7 @@
             type="button"
             aria-haspopup="dialog"
           >
-            <span>🐾 导出给 Codex</span>
+            <span>🪶 导出给 Codex</span>
             <small>Experimental</small>
           </button>
         </div>
@@ -201,8 +201,8 @@
         <div class="panel-brand-footer">
           <img
             class="panel-footer-logo"
-            src="/src/assets/brand/meow-generator-logo.png"
-            alt="Meow Generator · made by Simon_阿文 & Hyacinth"
+            src="/src/assets/brand/bird-mascot.png"
+            alt="Bird Generator 白色鹦鹉吉祥物"
             width="1536"
             height="1024"
             loading="lazy"

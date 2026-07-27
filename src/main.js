@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-import { buildCat } from './catBuilder.js';
-import { COATS, EYE_COLORS, POSES } from './coats.js';
+import { buildBird as buildCat } from './birdBuilder.js';
+import { PLUMAGES as COATS, EYE_COLORS, POSES } from './birdPresets.js';
+import { DEFAULT_BIRD_PARAMS } from './birdParams.js';
 import { createRng, randomSeed } from './rng.js';
 import {
   pokeUniforms, pokeFeel, beginGrab, setGrabPoint, setGrabTarget, endGrab,
@@ -25,15 +26,15 @@ import {
   createWeatherAudio,
 } from './weather.js';
 import {
-  MESH2MOTION_ACTIONS,
-  getRigCompatibility,
-} from './mesh2motionRig.js';
-import { createMesh2MotionSkinRig } from './mesh2motionSkinRig.js';
+  BIRD_MOTION_ACTIONS as MESH2MOTION_ACTIONS,
+  getBirdRigCompatibility as getRigCompatibility,
+  createBirdMotionRig as createMesh2MotionSkinRig,
+} from './birdMotionRig.js';
 import {
   MOTION_KEY_BINDINGS,
-  createCatMotionStateMachine,
+  createBirdMotionStateMachine as createCatMotionStateMachine,
   isMotionControlCode,
-} from './catMotionStateMachine.js';
+} from './birdMotionStateMachine.js';
 
 const i18n = initI18n();
 const bgm = createRandomBgm(document.getElementById('bgm-toggle'));
@@ -142,9 +143,9 @@ const BODY_SLIDERS = [
   { key: 'headSize',   name: '头身比',   min: 0.35, max: 2.8,  step: 0.01 },
   { key: 'chubbiness', name: '圆润度',   min: 0.3,  max: 4.5,  step: 0.01 },
   { key: 'legLength',  name: '腿长',     min: 0.05, max: 5.0,  step: 0.01 },
-  { key: 'earSize',    name: '耳朵大小', min: 0.1,  max: 4.5,  step: 0.01 },
-  { key: 'tailLength', name: '尾巴长度', min: 0.05, max: 4.5,  step: 0.01 },
-  { key: 'tailCurl',   name: '尾巴卷曲', min: -0.75, max: 2.25, step: 0.01 },
+  { key: 'earSize',    name: '翅膀大小', min: 0.55, max: 1.8,  step: 0.01 },
+  { key: 'tailLength', name: '尾羽长度', min: 0.45, max: 2.4,  step: 0.01 },
+  { key: 'tailCurl',   name: '尾羽翘度', min: -0.6, max: 1.2, step: 0.01 },
 ];
 
 const EYE_SLIDERS = [
@@ -154,7 +155,7 @@ const EYE_SLIDERS = [
 ];
 
 const FUR_SLIDERS = [
-  { key: 'furFluff', name: '炸毛程度', min: 0.15, max: 3.0, step: 0.01 },
+  { key: 'furFluff', name: '蓬松程度', min: 0.15, max: 2.4, step: 0.01 },
 ];
 
 // UI keeps the wide ranges for manual sculpting, while random generation uses
@@ -172,28 +173,29 @@ const RANDOM_SLIDERS = [
 ];
 
 const params = {
-  seed: randomSeed(),
-  pose: 'loaf',
+  ...DEFAULT_BIRD_PARAMS,
+  seed: DEFAULT_BIRD_PARAMS.seed,
+  pose: DEFAULT_BIRD_PARAMS.pose,
   containerSeed: randomSeed(),
   containerSize: 1,
   containerSoftBody: true,
   containerSoftCollision: false,
-  coatId: 'orange',
-  eyeColor: '#d99a2b',
+  coatId: DEFAULT_BIRD_PARAMS.coatId,
+  eyeColor: DEFAULT_BIRD_PARAMS.eyeColor,
   oddEyes: false,
   eyeColorRight: '#5b8fd4',
-  headSize: 1.08,
-  chubbiness: 1.15,
-  legLength: 0.85,
-  earSize: 1.0,
-  eyeSize: 1.05,
-  irisScale: 0.65,
+  headSize: DEFAULT_BIRD_PARAMS.headSize,
+  chubbiness: DEFAULT_BIRD_PARAMS.chubbiness,
+  legLength: DEFAULT_BIRD_PARAMS.legLength,
+  earSize: DEFAULT_BIRD_PARAMS.earSize,
+  eyeSize: DEFAULT_BIRD_PARAMS.eyeSize,
+  irisScale: DEFAULT_BIRD_PARAMS.irisScale,
   wateryEyes: false,
   wateryEyeShape: 1.1,
-  tailLength: 0.95,
-  tailCurl: 0.35,
-  fluffy: false,
-  furFluff: 0.9,
+  tailLength: DEFAULT_BIRD_PARAMS.tailLength,
+  tailCurl: DEFAULT_BIRD_PARAMS.tailCurl,
+  fluffy: DEFAULT_BIRD_PARAMS.fluffy,
+  furFluff: DEFAULT_BIRD_PARAMS.furFluff,
   outlineJitter: 0.25,
   dynamicCoat: true,
   dynamicCoatBase: '#f6dfbd',
@@ -237,7 +239,7 @@ function applyDynamicCoatPreset(coatId) {
 // ---------------------------------------------------------------- 场景
 const canvas = document.getElementById('scene');
 canvas.tabIndex = 0;
-canvas.setAttribute('aria-label', '3D 小猫画布');
+canvas.setAttribute('aria-label', '3D 小鸟画布');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
@@ -1431,7 +1433,7 @@ function stepSim(dt) {
       const frameLabel = motionState?.retarget?.sourceFrame != null
         ? ` · 源帧 ${motionState.retarget.sourceFrame.toFixed(1)}`
         : '';
-      motionStatusEl.textContent = `${actionMeta?.name ?? activeMotionAction}${frameLabel} · 固定网格 · 19 骨骼蒙皮`;
+      motionStatusEl.textContent = `${actionMeta?.name ?? activeMotionAction}${frameLabel} · 程序化鸟类动作 · 11 个语义骨骼`;
       motionStatusEl.dataset.grade = compatibility.grade;
     }
   }
@@ -1673,7 +1675,7 @@ const sliderSyncs = [];
 
 // 顶层保留四个常用分类；体型与花纹默认展开，细项按需要再展开。
 const bodySec = section('体型', { collapsible: true, collapsed: false });
-const coatSec = section('花纹与眼睛', { collapsible: true, collapsed: false });
+const coatSec = section('羽纹与眼睛', { collapsible: true, collapsed: false });
 const sceneSec = section('场景与渲染', { collapsible: true, collapsed: true });
 const motionSec = section('Motion', {
   collapsible: true,
@@ -1695,12 +1697,12 @@ poseControls.appendChild(containerPoseControls);
 const containerStatus = document.createElement('p');
 containerStatus.className = 'container-status';
 containerPoseControls.appendChild(containerStatus);
-actionButton(containerPoseControls, '随机猫窝', () => {
+actionButton(containerPoseControls, '随机鸟窝', () => {
   params.containerSeed = randomSeed();
   refreshers.forEach((refresh) => refresh());
   rebuild('full');
 });
-const containerSizeControl = sliderRow(containerPoseControls, '猫窝大小', {
+const containerSizeControl = sliderRow(containerPoseControls, '鸟窝大小', {
   min: 0.72,
   max: 1.5,
   step: 0.01,
@@ -1726,7 +1728,7 @@ const containerSoftCollisionToggle = toggleRow(containerPoseControls, '实验：
   },
 });
 containerPoseControls.hidden = params.motionDebug || params.pose !== 'containerCrouch';
-containerStatus.textContent = `当前猫窝：${getContainerDescriptor(params.containerSeed).name}`;
+containerStatus.textContent = `当前鸟窝：${getContainerDescriptor(params.containerSeed).name}`;
 refreshers.push(chipGroup(
   staticPoseControls,
   POSES,
@@ -1789,7 +1791,7 @@ const motionSelect = selectRow(
       params.motionAction = value;
       motionElapsed = 0;
       const compatibility = getRigCompatibility('standing', value);
-      motionStatusEl.textContent = `源动作 ${MESH2MOTION_ACTIONS.find((item) => item.id === value)?.sourceName ?? value} · ${compatibility.label}`;
+      motionStatusEl.textContent = `${MESH2MOTION_ACTIONS.find((item) => item.id === value)?.name ?? value} · ${compatibility.label}`;
       motionStatusEl.dataset.grade = compatibility.grade;
     },
   }
@@ -1811,7 +1813,7 @@ const motionIntensityControl = sliderRow(motionOptions, '幅度', {
 });
 motionStatusEl = document.createElement('p');
 motionStatusEl.className = 'rig-status';
-motionStatusEl.textContent = 'Mesh2Motion 原始关键帧 · 固定网格 · 19 骨骼蒙皮';
+motionStatusEl.textContent = '程序化鸟类动作 · 11 个语义骨骼';
 motionStatusEl.dataset.grade = 'full';
 motionOptions.appendChild(motionStatusEl);
 const motionKeyboardHint = document.createElement('p');
@@ -1821,7 +1823,7 @@ motionKeyboardHint.innerHTML = MOTION_KEY_BINDINGS
   .join('');
 motionKeyboardHint.hidden = !params.motionStateMachine;
 motionOptions.appendChild(motionKeyboardHint);
-actionButton(motionOptions, '小猫归位', () => {
+actionButton(motionOptions, '小鸟归位', () => {
   resetMotionWorld();
   motionRig?.reset();
   if (cat) cat.position.set(0, lift.y + CAT_VISUAL_CONTACT_LIFT, 0);
@@ -1835,7 +1837,7 @@ refreshers.push(() => {
   staticPoseControls.hidden = params.motionDebug;
   containerPoseControls.hidden = params.motionDebug || params.pose !== 'containerCrouch';
   const containerDescriptor = getContainerDescriptor(params.containerSeed);
-  containerStatus.textContent = `当前猫窝：${containerDescriptor.name}`;
+  containerStatus.textContent = `当前鸟窝：${containerDescriptor.name}`;
   containerSizeControl.sync();
   containerSoftBodyToggle.sync();
   containerSoftCollisionToggle.sync();
@@ -1863,10 +1865,10 @@ refreshers.push(chipGroup(
 const dynamicCoatDisclosure = document.createElement('details');
 dynamicCoatDisclosure.className = 'nested-disclosure';
 const dynamicCoatSummary = document.createElement('summary');
-dynamicCoatSummary.textContent = '自定义花色';
+dynamicCoatSummary.textContent = '自定义羽色';
 dynamicCoatDisclosure.appendChild(dynamicCoatSummary);
 coatSec.appendChild(dynamicCoatDisclosure);
-const dynamicCoatControl = toggleRow(dynamicCoatDisclosure, '启用自定义花色', {
+const dynamicCoatControl = toggleRow(dynamicCoatDisclosure, '启用自定义羽色', {
   get: () => params.dynamicCoat,
   set: (on) => {
     params.dynamicCoat = on;
@@ -1892,7 +1894,7 @@ const dynamicCoatBControl = colorRow(dynamicCoatOptions, '辅助色块', {
 const currentDynamicCoatPattern = () =>
   COATS.find((coat) => coat.id === params.coatId)?.soft?.pattern ?? 'patch';
 const dynamicCoatSpecificSyncs = [];
-const dynamicCoatRandomButton = actionButton(dynamicCoatOptions, '随机花色参数', () => {
+const dynamicCoatRandomButton = actionButton(dynamicCoatOptions, '随机羽色参数', () => {
   const rng = createRng(randomSeed());
   if (currentDynamicCoatPattern() === 'tabby') {
     params.dynamicCoatBodyDensity = Math.round(rng.range(1.5, 28) * 10) / 10;
@@ -1938,13 +1940,13 @@ for (const definition of genericCoatSliderDefs) {
 const dynamicCoatTabbyControls = document.createElement('div');
 dynamicCoatTabbyControls.className = 'nested-controls';
 dynamicCoatOptions.appendChild(dynamicCoatTabbyControls);
-subLabel(dynamicCoatTabbyControls, '身体环纹');
+subLabel(dynamicCoatTabbyControls, '翅膀羽纹');
 const tabbyBodySliderDefs = [
   { key: 'dynamicCoatBodyDensity', name: '密度', min: 0.8, max: 32, step: 0.1 },
   { key: 'dynamicCoatBodyWidth', name: '宽度', min: 0.01, max: 1.1, step: 0.01 },
   { key: 'dynamicCoatBodyIrregularity', name: '抖动', min: 0, max: 4, step: 0.01 },
 ];
-subLabel(dynamicCoatTabbyControls, '头部额纹');
+subLabel(dynamicCoatTabbyControls, '头部细纹');
 const tabbyHeadSliderDefs = [
   { key: 'dynamicCoatHeadDensity', name: '密度', min: 1, max: 64, step: 1 },
   { key: 'dynamicCoatHeadWidth', name: '宽度', min: 0.01, max: 1.1, step: 0.01 },
@@ -2075,8 +2077,8 @@ for (const s of BODY_SLIDERS) {
     set: (v) => { params[s.key] = v; rebuildDraftThenFull(); },
   }));
 }
-const furControls = controlGroup(bodySec, '毛发');
-const fluffyControl = toggleRow(furControls, '炸毛', {
+const furControls = controlGroup(bodySec, '羽毛');
+const fluffyControl = toggleRow(furControls, '蓬松羽毛', {
   get: () => params.fluffy,
   set: (on) => {
     params.fluffy = on;
@@ -2084,7 +2086,7 @@ const fluffyControl = toggleRow(furControls, '炸毛', {
     rebuild('full');
   },
 });
-const furFluffControl = sliderRow(furControls, '炸毛程度', {
+const furFluffControl = sliderRow(furControls, '蓬松程度', {
   min: FUR_SLIDERS[0].min,
   max: FUR_SLIDERS[0].max,
   step: FUR_SLIDERS[0].step,
@@ -2111,7 +2113,7 @@ sliderSyncs.push(sliderRow(lineSec, '手绘抖动', {
 }));
 
 // —— 捏猫：软体交互手感（实时生效）——
-const pokeSec = controlGroup(sceneSec, '捏猫');
+const pokeSec = controlGroup(sceneSec, '摸摸小鸟');
 sliderRow(pokeSec, '范围', {
   min: 0.15, max: 0.78, step: 0.01,
   get: () => pokeUniforms.uPokeRadius.value,
@@ -2692,7 +2694,7 @@ document.getElementById('btn-export-glb').addEventListener('click', () => {
     cat,
     (result) => {
       restoreDynamicCoat?.();
-      download(new Blob([result], { type: 'model/gltf-binary' }), `kitten_${params.seed}.glb`);
+      download(new Blob([result], { type: 'model/gltf-binary' }), `bird_${params.seed}.glb`);
     },
     (err) => {
       restoreDynamicCoat?.();
@@ -2711,12 +2713,12 @@ createCodexPetPreview({
   trigger: document.getElementById('btn-codex-pet'),
   capturePreview: () => canvas.toDataURL('image/png'),
   getPetDescriptor: () => ({
-    schema: 'meow-generator/codex-pet-draft@1',
-    name: `Meow #${params.seed}`,
+    schema: 'bird-generator/codex-pet-draft@1',
+    name: `Bird #${params.seed}`,
     seed: params.seed,
     createdAt: new Date().toISOString(),
     status: 'experimental',
-    generator: 'Meow Generator',
+    generator: 'Bird Generator',
     parameters: { ...params },
   }),
 });

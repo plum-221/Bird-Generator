@@ -1,7 +1,56 @@
-const STORAGE_KEY = 'meow-generator-locale';
+const STORAGE_KEY = 'bird-generator-locale';
 const SUPPORTED_LOCALES = new Set(['zh-CN', 'ja-JP', 'en']);
 
 const COPY = {
+  '白色小鹦鹉正在准备画布': { 'ja-JP': '白いインコがキャンバスを準備中', en: 'The white budgie is preparing the canvas' },
+  '雨量和谷子量可分别调整': { 'ja-JP': '雨量とシードの量を個別に調整', en: 'Rain and seed amounts can be adjusted separately' },
+  '谷子量': { 'ja-JP': 'シード量', en: 'Seeds' },
+  '🪶 随机遇见小鸟': { 'ja-JP': '🪶 ランダムな小鳥', en: '🪶 Random bird' },
+  '翅膀大小': { 'ja-JP': '翼の大きさ', en: 'Wing size' },
+  '尾羽长度': { 'ja-JP': '尾羽の長さ', en: 'Tail length' },
+  '尾羽翘度': { 'ja-JP': '尾羽の角度', en: 'Tail angle' },
+  '蓬松程度': { 'ja-JP': 'ふわふわ度', en: 'Fluffiness' },
+  '随机鸟窝': { 'ja-JP': 'ランダムな鳥の巣', en: 'Random bird nest' },
+  '鸟窝大小': { 'ja-JP': '鳥の巣の大きさ', en: 'Bird nest size' },
+  '小鸟归位': { 'ja-JP': '小鳥を戻す', en: 'Reset bird' },
+  '乖乖站立': { 'ja-JP': 'おすまし立ち', en: 'Sweet stand' },
+  '蓬松团坐': { 'ja-JP': 'ふわふわ座り', en: 'Fluffy sit' },
+  '窝里休息': { 'ja-JP': '巣で休む', en: 'Nest rest' },
+  '伸展翅膀': { 'ja-JP': '翼を伸ばす', en: 'Wing stretch' },
+  '挺胸站立': { 'ja-JP': '胸を張る', en: 'Proud stand' },
+  '放松坐姿': { 'ja-JP': 'リラックス座り', en: 'Relaxed sit' },
+  '侧躺撒娇': { 'ja-JP': '横向きごろん', en: 'Side cuddle' },
+  '长尾站姿': { 'ja-JP': '長い尾の立ち姿', en: 'Long-tail stand' },
+  '照片同款·奶油白': { 'ja-JP': '写真モデル・クリーム白', en: 'Photo bird · cream white' },
+  '天空蓝白': { 'ja-JP': '空色ブルー白', en: 'Sky blue & white' },
+  '黄绿虎皮': { 'ja-JP': '黄緑セキセイ', en: 'Classic green' },
+  '纯黄小鸟': { 'ja-JP': '黄色い小鳥', en: 'Sunny yellow' },
+  '薄荷青': { 'ja-JP': 'ミントグリーン', en: 'Mint green' },
+  '羽纹与眼睛': { 'ja-JP': '羽模様と目', en: 'Plumage & eyes' },
+  '自定义羽色': { 'ja-JP': '羽色をカスタム', en: 'Custom plumage' },
+  '启用自定义羽色': { 'ja-JP': 'カスタム羽色を有効化', en: 'Enable custom plumage' },
+  '随机羽色参数': { 'ja-JP': '羽色をランダム', en: 'Randomize plumage' },
+  '翅膀羽纹': { 'ja-JP': '翼の羽模様', en: 'Wing markings' },
+  '头部细纹': { 'ja-JP': '頭の細い模様', en: 'Head markings' },
+  '羽毛': { 'ja-JP': '羽毛', en: 'Feathers' },
+  '蓬松羽毛': { 'ja-JP': 'ふわふわの羽', en: 'Fluffy feathers' },
+  '摸摸小鸟': { 'ja-JP': '小鳥をなでる', en: 'Pet the bird' },
+  '🪶 导出给 Codex': { 'ja-JP': '🪶 Codex 用に書き出す', en: '🪶 Export for Codex' },
+  '当前小鸟': { 'ja-JP': '現在の小鳥', en: 'Current bird' },
+  '这里会准备当前小鸟的参数 JSON 和参考图 PNG。下载后，把两个文件一起发送给 Codex。': {
+    'ja-JP': '現在の小鳥のパラメータ JSON と参考画像 PNG を準備します。2つを一緒に Codex へ送ってください。',
+    en: 'This prepares a parameter JSON and reference PNG for the current bird. Send both to Codex.',
+  },
+  'JSON 保存体型和配色参数；PNG 帮助 Codex 确认小鸟的最终外观。': {
+    'ja-JP': 'JSON は体型と配色を保存し、PNG は小鳥の最終的な見た目の確認に使います。',
+    en: 'JSON preserves body and color parameters; PNG confirms the bird’s final appearance.',
+  },
+  '请使用我附上的 Bird Generator 参数 JSON 和参考图 PNG，为这只小鸟创建并安装一个 Codex 本机宠物。请保持它的体型、羽纹、眼睛和主色；生成完整透明动作图集；安装前先给我看动作总览和左右方向预览；确认后安装为新的独立宠物，不要覆盖现有宠物。': {
+    'ja-JP': '添付した Bird Generator の JSON と参考 PNG を使い、この小鳥を新しい Codex ローカルペットとして作成してください。体型、羽模様、目、主色を保ち、透明モーションアトラスと左右プレビューを確認後、既存ペットを上書きせずに導入してください。',
+    en: 'Use the attached Bird Generator JSON and reference PNG to create this bird as a new local Codex pet. Preserve its body, plumage, eyes, and colors; show the transparent motion atlas and direction previews before installing without overwriting another pet.',
+  },
+  '白色鹦鹉动作参考': { 'ja-JP': '白いインコのモーション参考', en: 'White budgie motion reference' },
+  '返回当前小鸟': { 'ja-JP': '現在の小鳥に戻る', en: 'Back to current bird' },
   '小猫罐头正在准备画布': { 'ja-JP': 'ねこ缶がキャンバスを準備中', en: 'The canned kitten is preparing the canvas' },
   '正在开罐，马上就好…': { 'ja-JP': '缶を開けています、もうすぐです…', en: 'Opening the can, almost ready…' },
   '场景控制': { 'ja-JP': 'シーン操作', en: 'Scene controls' },
@@ -263,8 +312,8 @@ function normalizedLocale(value) {
 function translatedCore(source, locale) {
   if (locale === 'zh-CN') return source;
   if (COPY[source]?.[locale]) return COPY[source][locale];
-  if (source.startsWith('当前猫窝：')) {
-    const prefix = locale === 'ja-JP' ? '現在の猫ベッド：' : 'Current nest: ';
+  if (source.startsWith('当前鸟窝：')) {
+    const prefix = locale === 'ja-JP' ? '現在の鳥の巣：' : 'Current bird nest: ';
     return `${prefix}${translatedCore(source.slice(5), locale)}`;
   }
   return source
@@ -332,7 +381,7 @@ export function setLocale(locale) {
   activeLocale = normalizedLocale(locale);
   localStorage.setItem(STORAGE_KEY, activeLocale);
   document.documentElement.lang = activeLocale;
-  document.title = 'Meow Generator';
+  document.title = 'Bird Generator';
   translating = true;
   translateSubtree(document.body);
   translating = false;

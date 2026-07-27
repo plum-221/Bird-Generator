@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { createFlatFishFin, createFlatFishTail } from './fishTail.js';
 
 const OUTLINE_COLOR = '#4a3428';
 export const WEATHER_AMOUNT_LIMITS = Object.freeze({
@@ -52,67 +51,23 @@ function outlineOf(geometry, thickness = 0.014) {
 }
 
 function createFishMesh(color, accent, gradientMap) {
-  const fish = new THREE.Group();
-  fish.name = 'weather-fish';
-
-  const bodyGeometry = new THREE.SphereGeometry(0.28, 10, 7);
-  bodyGeometry.scale(1.35, 0.7, 0.58);
-  const bodyPosition = bodyGeometry.getAttribute('position');
-  for (let i = 0; i < bodyPosition.count; i++) {
-    const x = bodyPosition.getX(i);
-    const headBias = THREE.MathUtils.clamp((x + 0.378) / 0.756, 0, 1);
-    const taper = THREE.MathUtils.lerp(0.76, 1.03, headBias);
-    bodyPosition.setY(i, bodyPosition.getY(i) * taper);
-    bodyPosition.setZ(i, bodyPosition.getZ(i) * THREE.MathUtils.lerp(0.84, 1.02, headBias));
+  const seedCluster = new THREE.Group();
+  seedCluster.name = 'weather-seeds';
+  const colors = [color, accent, '#efd277'];
+  for (let index = 0; index < 3; index++) {
+    const grainGeometry = new THREE.SphereGeometry(0.13, 10, 7);
+    grainGeometry.scale(0.7, 1.35, 0.55);
+    const grain = new THREE.Mesh(
+      grainGeometry,
+      new THREE.MeshToonMaterial({ color: colors[index], gradientMap })
+    );
+    grain.position.set((index - 1) * 0.12, (index % 2) * 0.07, (index - 1) * 0.025);
+    grain.rotation.z = (index - 1) * 0.24;
+    seedCluster.add(grain, outlineOf(grainGeometry, 0.012));
+    seedCluster.children.at(-1).position.copy(grain.position);
+    seedCluster.children.at(-1).rotation.copy(grain.rotation);
   }
-  bodyPosition.needsUpdate = true;
-  bodyGeometry.computeVertexNormals();
-  bodyGeometry.computeBoundingSphere();
-  const body = new THREE.Mesh(
-    bodyGeometry,
-    new THREE.MeshToonMaterial({ color, gradientMap })
-  );
-  fish.add(body, outlineOf(bodyGeometry));
-
-  fish.add(createFlatFishTail({
-    rootX: -0.31,
-    rearX: -0.56,
-    halfHeight: 0.18,
-    color: accent,
-    gradientMap,
-    outlineColor: OUTLINE_COLOR,
-  }));
-
-  const dorsalFin = createFlatFishFin({
-    rootWidth: 0.15,
-    height: 0.18,
-    sweep: -0.035,
-    color: accent,
-    gradientMap,
-    outlineColor: OUTLINE_COLOR,
-  });
-  dorsalFin.position.set(-0.035, 0.18, 0);
-  dorsalFin.rotation.z = -0.08;
-  fish.add(dorsalFin);
-
-  const eyeOutline = new THREE.Mesh(
-    new THREE.CircleGeometry(0.058, 18),
-    new THREE.MeshBasicMaterial({ color: OUTLINE_COLOR, side: THREE.DoubleSide })
-  );
-  eyeOutline.position.set(0.22, 0.07, 0.164);
-  const eyeWhite = new THREE.Mesh(
-    new THREE.CircleGeometry(0.048, 18),
-    new THREE.MeshBasicMaterial({ color: '#fff9e9', side: THREE.DoubleSide })
-  );
-  eyeWhite.position.set(0.22, 0.07, 0.166);
-  const pupil = new THREE.Mesh(
-    new THREE.CircleGeometry(0.019, 16),
-    new THREE.MeshBasicMaterial({ color: OUTLINE_COLOR, side: THREE.DoubleSide })
-  );
-  pupil.position.set(0.235, 0.073, 0.168);
-  fish.add(eyeOutline, eyeWhite, pupil);
-
-  fish.traverse((object) => {
+  seedCluster.traverse((object) => {
     if (!object.isMesh) return;
     object.castShadow = true;
     const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -122,8 +77,7 @@ function createFishMesh(color, accent, gradientMap) {
         : THREE.FrontSide;
     }
   });
-
-  return fish;
+  return seedCluster;
 }
 
 /**

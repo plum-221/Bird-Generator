@@ -6,8 +6,8 @@ const CARD_LAYOUT = Object.freeze({
 });
 
 export const SHARE_CARD_REPOSITORY = Object.freeze({
-  label: 'github.com/ringhyacinth/Meow-Generator',
-  url: 'https://github.com/ringhyacinth/Meow-Generator',
+  label: 'github.com/plum-221/Bird-Generator',
+  url: 'https://github.com/plum-221/Bird-Generator',
 });
 
 const CARD_TOTAL = 9999;
@@ -57,7 +57,7 @@ const COPY = Object.freeze({
     close: '取消',
     saved: '已保存 PNG',
     hint: '拖动画面调整角度',
-    title: '猫猫纪念卡',
+    title: '小鸟纪念卡',
     skin: '换一个皮肤',
     cardNumber: (serial) => `第 ${serial} 张 / ${CARD_TOTAL}`,
   },
@@ -75,7 +75,7 @@ const COPY = Object.freeze({
     close: 'Close',
     saved: 'PNG saved',
     hint: 'Drag the scene to adjust the angle',
-    title: 'Meow keepsake card',
+    title: 'Bird keepsake card',
     skin: 'New skin',
     cardNumber: (serial) => `CARD ${serial} / ${CARD_TOTAL}`,
   },
@@ -91,7 +91,7 @@ function positiveSeed(seed) {
 }
 
 export function getShareCardFilename(seed) {
-  return `meow_card_${positiveSeed(seed)}.png`;
+  return `bird_card_${positiveSeed(seed)}.png`;
 }
 
 function clampChannel(value) {
@@ -171,8 +171,8 @@ function rarityFromSeed(seed) {
 function createCatTheme(palette) {
   const cat = normalizeCatPalette(palette);
   return {
-    name: 'cat-signature',
-    pattern: 'cat-paws',
+    name: 'bird-signature',
+    pattern: 'bird-feathers',
     paper: mixHex(cat.base, '#fffaf0', 0.78),
     primary: cat.primary,
     secondary: mixHex(cat.base, cat.secondary, 0.36),
@@ -188,7 +188,7 @@ function createAlternateTheme(seed, palette, skinVariant) {
   const blend = 0.22 + ((hash >>> 8) % 18) / 100;
   const primaryFirst = ((hash >>> 16) & 1) === 0;
   return {
-    name: `cat-remix-${skinVariant}`,
+    name: `bird-remix-${skinVariant}`,
     pattern: rugTheme.pattern,
     paper: mixHex(catTheme.paper, rugTheme.paper, 0.28),
     primary: mixHex(
@@ -248,23 +248,20 @@ function drawStar(ctx, x, y, radius, color, rotation = 0) {
   ctx.restore();
 }
 
-function drawPaw(ctx, x, y, scale, color) {
+function drawFeather(ctx, x, y, scale, color) {
   ctx.save();
   ctx.translate(x, y);
+  ctx.rotate(-0.5);
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.ellipse(0, 6 * scale, 13 * scale, 11 * scale, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 8 * scale, 22 * scale, 0, 0, Math.PI * 2);
   ctx.fill();
-  for (const [dx, dy, rx, ry] of [
-    [-14, -8, 6, 8],
-    [-5, -15, 6, 8],
-    [6, -15, 6, 8],
-    [15, -7, 6, 8],
-  ]) {
-    ctx.beginPath();
-    ctx.ellipse(dx * scale, dy * scale, rx * scale, ry * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.4 * scale;
+  ctx.beginPath();
+  ctx.moveTo(0, -19 * scale);
+  ctx.lineTo(0, 27 * scale);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -344,12 +341,12 @@ function drawCardPattern(ctx, {
         ctx.stroke();
       }
     }
-  } else if (theme.pattern === 'cat-paws') {
+  } else if (theme.pattern === 'bird-feathers') {
     for (let index = 0; index < 18; index++) {
       const bottom = index >= 7;
       const rowIndex = bottom ? index - 7 : index;
       const count = bottom ? 11 : 7;
-      drawPaw(
+      drawFeather(
         ctx,
         cardX + cardWidth * ((rowIndex + 0.55) / count),
         (bottom ? bottomY : topY) + (bottom ? bottomHeight * 0.52 : topHeight * 0.46),

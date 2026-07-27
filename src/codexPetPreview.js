@@ -1,4 +1,4 @@
-import prototypeContactSheetUrl from './assets/codex-pet/meow-orange-prototype-contact-sheet.png';
+import prototypeContactSheetUrl from './assets/brand/bird-mascot.png';
 
 function makeButton(label, className = '') {
   const button = document.createElement('button');
@@ -75,7 +75,7 @@ export function createCodexPetPreview({
   const eyebrow = document.createElement('div');
   eyebrow.className = 'codex-pet-eyebrow';
   const paw = document.createElement('span');
-  paw.textContent = '🐾';
+  paw.textContent = '🪶';
   const experimental = document.createElement('span');
   experimental.className = 'codex-pet-badge';
   experimental.textContent = 'Experimental';
@@ -95,12 +95,12 @@ export function createCodexPetPreview({
 
   const previewImage = document.createElement('img');
   previewImage.className = 'codex-pet-preview-image';
-  previewImage.alt = '当前小猫预览';
+  previewImage.alt = '当前小鸟预览';
   previewImage.draggable = false;
 
   const previewLabel = document.createElement('span');
   previewLabel.className = 'codex-pet-preview-label';
-  previewLabel.textContent = '当前小猫';
+  previewLabel.textContent = '当前小鸟';
 
   const previewFrame = document.createElement('figure');
   previewFrame.className = 'codex-pet-preview';
@@ -108,7 +108,7 @@ export function createCodexPetPreview({
 
   const description = document.createElement('p');
   description.className = 'codex-pet-description';
-  description.textContent = '这里会准备当前小猫的参数 JSON 和参考图 PNG。下载后，把两个文件一起发送给 Codex。';
+  description.textContent = '这里会准备当前小鸟的参数 JSON 和参考图 PNG。下载后，把两个文件一起发送给 Codex。';
 
   const steps = document.createElement('ol');
   steps.className = 'codex-pet-steps';
@@ -128,7 +128,7 @@ export function createCodexPetPreview({
   const statusTitle = document.createElement('strong');
   statusTitle.textContent = '为什么需要两个文件？';
   const statusCopy = document.createElement('span');
-  statusCopy.textContent = 'JSON 保存体型和配色参数；PNG 帮助 Codex 确认小猫的最终外观。';
+  statusCopy.textContent = 'JSON 保存体型和配色参数；PNG 帮助 Codex 确认小鸟的最终外观。';
   status.append(statusTitle, statusCopy);
 
   const promptBox = document.createElement('section');
@@ -136,7 +136,7 @@ export function createCodexPetPreview({
   const promptTitle = document.createElement('strong');
   promptTitle.textContent = '把这段话和两个文件一起发给 Codex：';
   const promptText = document.createElement('p');
-  promptText.textContent = '请使用我附上的 Meow Generator 参数 JSON 和参考图 PNG，为这只猫创建并安装一个 Codex 本机宠物。请保持它的体型、花纹、眼睛和主色；生成完整透明动作图集；安装前先给我看动作总览和左右方向预览；确认后安装为新的独立宠物，不要覆盖现有宠物。';
+  promptText.textContent = '请使用我附上的 Bird Generator 参数 JSON 和参考图 PNG，为这只小鸟创建并安装一个 Codex 本机宠物。请保持它的体型、羽纹、眼睛和主色；生成完整透明动作图集；安装前先给我看动作总览和左右方向预览；确认后安装为新的独立宠物，不要覆盖现有宠物。';
   promptBox.append(promptTitle, promptText);
 
   const note = document.createElement('p');
@@ -172,8 +172,8 @@ export function createCodexPetPreview({
   function showCurrentPreview() {
     showingSample = false;
     previewFrame.classList.remove('is-contact-sheet');
-    previewLabel.textContent = '当前小猫';
-    previewImage.alt = '当前小猫预览';
+    previewLabel.textContent = '当前小鸟';
+    previewImage.alt = '当前小鸟预览';
     currentPreviewUrl = capturePreview();
     previewImage.src = currentPreviewUrl;
     actionSampleButton.textContent = '查看动作样机';
@@ -182,10 +182,10 @@ export function createCodexPetPreview({
   function showActionSample() {
     showingSample = true;
     previewFrame.classList.add('is-contact-sheet');
-    previewLabel.textContent = '橘橘动作样机';
-    previewImage.alt = '橘橘 Codex 宠物动作样机';
+    previewLabel.textContent = '白色鹦鹉动作参考';
+    previewImage.alt = '白色鹦鹉 Codex 宠物动作参考';
     previewImage.src = prototypeContactSheetUrl;
-    actionSampleButton.textContent = '返回当前小猫';
+    actionSampleButton.textContent = '返回当前小鸟';
   }
 
   function open() {
@@ -223,21 +223,21 @@ export function createCodexPetPreview({
   });
   saveJsonButton.addEventListener('click', () => {
     const descriptor = getPetDescriptor();
-    const referenceImage = `meow-codex-pet-${descriptor.seed}-reference.png`;
+    const referenceImage = `bird-codex-pet-${descriptor.seed}-reference.png`;
     downloadJson({
       ...descriptor,
       handoff: {
         referenceImage,
         prompt: promptText.textContent,
       },
-    }, `meow-codex-pet-${descriptor.seed}.json`);
+    }, `bird-codex-pet-${descriptor.seed}.json`);
     note.textContent = '参数 JSON 已下载。还需要下载参考图 PNG。';
   });
   saveImageButton.addEventListener('click', () => {
     const descriptor = getPetDescriptor();
     downloadDataUrl(
       currentPreviewUrl || capturePreview(),
-      `meow-codex-pet-${descriptor.seed}-reference.png`
+      `bird-codex-pet-${descriptor.seed}-reference.png`
     );
     note.textContent = '参考图 PNG 已下载。请确认 JSON 也已经下载。';
   });
