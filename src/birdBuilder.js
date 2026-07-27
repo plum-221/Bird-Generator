@@ -172,32 +172,56 @@ function addFoot(parent, side, hip, floorY, materials, segments) {
   return leg;
 }
 
+function headSurfaceAnchor(headRadius, xRatio, yRatio, lift = 0) {
+  const radii = V(headRadius, headRadius * 1.06, headRadius * 0.93);
+  const x = headRadius * xRatio;
+  const y = headRadius * yRatio;
+  const radial = (x / radii.x) ** 2 + (y / radii.y) ** 2;
+  const z = radii.z * Math.sqrt(Math.max(0.001, 1 - radial));
+  const normal = V(x / (radii.x ** 2), y / (radii.y ** 2), z / (radii.z ** 2)).normalize();
+  return { point: V(x, y, z + lift), normal };
+}
+
+function smallHeadSurfaceClearance(headRadius) {
+  return Math.max(0, 0.255 - headRadius) * 0.24;
+}
+
 function addEye(face, side, headRadius, material, eyeSize) {
   const prefix = side < 0 ? 'left' : 'right';
   const group = new THREE.Group();
   group.name = `${prefix}EyeGroup`;
-  group.position.set(side * headRadius * 0.55, headRadius * 0.08, headRadius * 0.83);
+  const radius = headRadius * 0.105 * eyeSize;
+  const surfaceLift = radius * 0.18 + smallHeadSurfaceClearance(headRadius);
+  const anchor = headSurfaceAnchor(headRadius, side * 0.55, 0.08, surfaceLift);
+  group.position.copy(anchor.point);
+  group.quaternion.setFromUnitVectors(V(0, 0, 1), anchor.normal);
+  group.userData.surfaceAnchored = true;
+  group.userData.surfaceNormal = anchor.normal.clone();
+  group.userData.surfaceLift = surfaceLift;
   face.add(group);
 
-  const radius = headRadius * 0.105 * eyeSize;
+  const gaze = new THREE.Group();
+  gaze.name = `${prefix}EyeGaze`;
+  group.userData.gaze = gaze;
+  group.add(gaze);
   const eye = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 12), material);
   eye.name = `${prefix}Eye`;
   eye.scale.z = 0.48;
-  group.add(eye);
+  gaze.add(eye);
   const highlight = new THREE.Mesh(
     new THREE.SphereGeometry(radius * 0.28, 10, 8),
     new THREE.MeshBasicMaterial({ color: '#fffdf7' })
   );
   highlight.name = `${prefix}EyeHighlight`;
   highlight.position.set(-radius * 0.26, radius * 0.30, radius * 0.48);
-  group.add(highlight);
+  gaze.add(highlight);
   return group;
 }
 
 function addFace(headRig, headRadius, params, materials) {
   const face = new THREE.Group();
   face.name = 'face';
-  face.position.z = 0.012 + Math.max(0, 0.255 - headRadius) * 0.35;
+  face.position.z = 0.004 + Math.max(0, 0.255 - headRadius) * 0.35;
   face.userData.surfaceOffset = face.position.z;
   headRig.add(face);
   const eyeGroups = [
@@ -210,9 +234,16 @@ function addFace(headRig, headRadius, params, materials) {
     for (let i = 0; i < 3; i++) {
       const mark = new THREE.Mesh(new THREE.CapsuleGeometry(headRadius * 0.012, headRadius * 0.07, 3, 7), materials.marking);
       mark.name = `foreheadMark${side}-${i}`;
-      mark.position.set(side * headRadius * (0.18 + i * 0.105), headRadius * (0.47 - i * 0.035), headRadius * 0.91);
-      mark.rotation.z = side * (0.65 - i * 0.08);
+      const surfaceLift = headRadius * 0.006 + smallHeadSurfaceClearance(headRadius);
+      const anchor = headSurfaceAnchor(headRadius, side * (0.18 + i * 0.105), 0.47 - i * 0.035, surfaceLift);
+      const align = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), anchor.normal);
+      const twist = new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), side * (0.65 - i * 0.08));
+      mark.position.copy(anchor.point);
+      mark.quaternion.copy(align).multiply(twist);
       mark.scale.z = 0.36;
+      mark.userData.surfaceAnchored = true;
+      mark.userData.surfaceNormal = anchor.normal.clone();
+      mark.userData.surfaceLift = surfaceLift;
       face.add(mark);
     }
   }
@@ -395,9 +426,10 @@ export function buildBird(rawParams, quality = 'full') {
   root.userData.updateEyeAnimation = (time, gazeX = 0, gazeY = 0) => {
     const blink = Math.sin(time * 0.81 + params.seed * 0.13) > 0.982 ? 0.10 : 1;
     for (const eye of eyeGroups) {
-      eye.scale.y = blink;
-      eye.rotation.y = gazeX * 0.08;
-      eye.rotation.x = -gazeY * 0.06;
+      const gaze = eye.userData.gaze;
+      gaze.scale.y = blink;
+      gaze.rotation.y = gazeX * 0.08;
+      gaze.rotation.x = -gazeY * 0.06;
     }
   };
   root.userData.updateStaticIdle = (time, enabled = true) => {

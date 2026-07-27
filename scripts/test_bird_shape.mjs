@@ -19,6 +19,17 @@ for (const required of [
 
 assert.equal(bird.userData.birdParts.eyeGroups.length, 2);
 assert.ok(bird.userData.birdParts.face, 'face must move with the head');
+const [leftEyeGroup, rightEyeGroup] = bird.userData.birdParts.eyeGroups;
+for (const eyeGroup of [leftEyeGroup, rightEyeGroup]) {
+  assert.equal(eyeGroup.userData.surfaceAnchored, true, 'eyes must use head-surface anchors');
+  assert.ok(Math.abs(eyeGroup.userData.surfaceNormal.length() - 1) < 1e-6, 'eye surface normal must be normalized');
+}
+assert.ok(leftEyeGroup.userData.surfaceNormal.x < 0 && rightEyeGroup.userData.surfaceNormal.x > 0, 'eye normals must face outward symmetrically');
+const foreheadMarks = [...names].filter((name) => name.startsWith('foreheadMark'));
+assert.equal(foreheadMarks.length, 6, 'bird must keep six forehead feather marks');
+for (const name of foreheadMarks) {
+  assert.equal(bird.getObjectByName(name).userData.surfaceAnchored, true, `${name} must use a head-surface anchor`);
+}
 assert.ok(!bird.getObjectByName('leftCheek'), 'left cheek geometry must be removed');
 assert.ok(!bird.getObjectByName('rightCheek'), 'right cheek geometry must be removed');
 assert.equal([...names].filter((name) => name.includes('ThroatDot')).length, 0, 'decorative throat dots must be removed');
@@ -104,6 +115,11 @@ assert.ok(largeHead.userData.headC.y > smallHead.userData.headC.y + 0.1, 'head c
 assert.ok(
   smallHead.userData.birdParts.face.userData.surfaceOffset > largeHead.userData.birdParts.face.userData.surfaceOffset + 0.02,
   'small heads must push face details forward to remain on the surface'
+);
+assert.ok(
+  smallHead.getObjectByName('leftEyeGroup').userData.surfaceLift
+    > largeHead.getObjectByName('leftEyeGroup').userData.surfaceLift + 0.015,
+  'small heads must give surface-anchored eyes enough clearance from the blended body shell'
 );
 
 const shortLegs = makeBird({ legLength: 0.45 });
