@@ -19,18 +19,18 @@ export const DEFAULT_BIRD_PARAMS = Object.freeze({
   eyeColor: '#171716',
   oddEyes: false,
   eyeColorRight: '#304d68',
-  headSize: 1.08,
-  chubbiness: 1.38,
-  legLength: 0.82,
-  earSize: 1.02,
-  eyeSize: 1.08,
+  headSize: 1.06,
+  chubbiness: 1.12,
+  legLength: 0.9,
+  earSize: 0.94,
+  eyeSize: 1.12,
   irisScale: 0.72,
   wateryEyes: false,
   wateryEyeShape: 0.4,
-  tailLength: 1.05,
-  tailCurl: 0.05,
+  tailLength: 1.24,
+  tailCurl: 0.02,
   fluffy: true,
-  furFluff: 1.18,
+  furFluff: 1.08,
 });
 
 export function clampBirdParams(source = {}) {
@@ -42,4 +42,3 @@ export function clampBirdParams(source = {}) {
   result.seed = Number.isFinite(Number(result.seed)) ? Math.trunc(Number(result.seed)) : DEFAULT_BIRD_SEED;
   return result;
 }
-

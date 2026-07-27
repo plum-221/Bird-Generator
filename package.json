@@ -6,7 +6,7 @@
   "description": "Bird Generator — a playful procedural 3D budgie creator built with Three.js",
   "type": "module",
   "scripts": {
-    "test": "npm run test:bird-params && npm run test:bird-motion && npm run test:share && npm run test:fish-pick && npm run test:poke && npm run test:motion",
+    "test": "npm run test:bird-params && npm run test:bird-shape && npm run test:bird-motion && npm run test:share && npm run test:fish-pick && npm run test:poke && npm run test:motion",
     "dev": "vite --port 8791",
     "build": "vite build",
     "preview": "vite preview",
@@ -15,6 +15,7 @@
     "test:poke": "node scripts/test_soft_poke.mjs",
     "test:share": "node scripts/test_share_card.mjs",
     "test:bird-params": "node scripts/test_bird_params.mjs",
+    "test:bird-shape": "node scripts/test_bird_shape.mjs",
     "test:bird-motion": "node scripts/test_bird_motion.mjs"
   },
   "dependencies": {

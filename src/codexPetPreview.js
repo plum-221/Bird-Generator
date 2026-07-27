@@ -1,4 +1,4 @@
-import prototypeContactSheetUrl from './assets/brand/bird-mascot.png';
+import prototypeContactSheetUrl from './assets/brand/bird-mascot-v2.png';
 
 function makeButton(label, className = '') {
   const button = document.createElement('button');

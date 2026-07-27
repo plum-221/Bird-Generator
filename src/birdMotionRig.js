@@ -55,11 +55,14 @@ export function createBirdMotionRig(bird) {
     const { head, body, chest, leftWing, rightWing, tail, feet } = parts;
     let lift = 0;
     if (actionId === 'idle') {
-      body.scale.y *= 1 + wave * 0.012 * amount;
-      head.rotation.y = wave * 0.06 * amount;
+      chest.scale.y *= 1 + wave * 0.012 * amount;
+      chest.scale.z *= 1 + wave * 0.018 * amount;
+      head.rotation.y = wave * 0.035 * amount;
+      head.rotation.z += Math.sin(phase * Math.PI) * 0.025 * amount;
     } else if (actionId === 'idle-alert') {
-      head.rotation.z = wave * 0.22 * amount;
-      head.rotation.y = Math.sin(phase * Math.PI) * 0.18;
+      head.rotation.z += wave * 0.18 * amount;
+      head.rotation.y = Math.sin(phase * Math.PI) * 0.12;
+      tail.rotation.z += wave * 0.022;
     } else if (['walk', 'run', 'sneak'].includes(actionId)) {
       const stride = actionId === 'run' ? 0.12 : actionId === 'sneak' ? 0.045 : 0.075;
       lift = Math.abs(wave) * stride * amount;
@@ -78,6 +81,7 @@ export function createBirdMotionRig(bird) {
     } else if (actionId === 'bark') {
       head.rotation.x = -0.12 + wave * 0.08;
       chest.scale.x *= 1 + Math.abs(wave) * 0.04;
+      tail.rotation.z += wave * 0.035;
     } else if (actionId === 'bite') {
       head.rotation.x = beat * 0.48;
       head.position.z += beat * 0.08;

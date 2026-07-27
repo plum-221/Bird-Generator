@@ -1,9 +1,9 @@
 const BASE_PLUMAGES = [
-  { id: 'snow', name: '照片同款·奶油白', base: '#f4efe2', chest: '#fffaf0', wing: '#e8e0cf', stripe: '#c9c1b2', cheek: '#f4ead3', cere: '#e7c6b8', beak: '#e4bd43' },
-  { id: 'sky', name: '天空蓝白', base: '#dceff2', chest: '#eefafa', wing: '#c8e2e8', stripe: '#718e9b', cheek: '#f3f1e4', cere: '#b9c9e4', beak: '#ddba55' },
-  { id: 'classic', name: '黄绿虎皮', base: '#8ecb54', chest: '#a9df65', wing: '#d6dc62', stripe: '#3e4d38', cheek: '#f3dc54', cere: '#bdcee8', beak: '#d9ad42' },
-  { id: 'sunny', name: '纯黄小鸟', base: '#f0d85d', chest: '#fae977', wing: '#e6c94d', stripe: '#d2b647', cheek: '#f5de75', cere: '#e6c7b6', beak: '#d3a83c' },
-  { id: 'mint', name: '薄荷青', base: '#9ed8bd', chest: '#bce8cf', wing: '#87c6ad', stripe: '#50796f', cheek: '#f1e9ca', cere: '#c7c9e7', beak: '#d9b24b' },
+  { id: 'snow', name: '照片同款·奶油白', base: '#f7f1e5', chest: '#fff8e9', wing: '#e2dbce', featherEdge: '#f3ecdf', tail: '#c9c3b7', stripe: '#aaa39b', marking: '#b8b0a7', throatDot: '#8e8985', cheek: '#f1d9c9', cere: '#e7bdae', beak: '#e4bc42', beakShadow: '#c89532', foot: '#aa9c9c' },
+  { id: 'sky', name: '天空蓝白', base: '#e5f2f2', chest: '#f2fbf8', wing: '#c8e3e8', featherEdge: '#e8f5f5', tail: '#8eb9c7', stripe: '#718e9b', marking: '#8aa2aa', throatDot: '#667b85', cheek: '#f1e5d4', cere: '#b9c9e4', beak: '#ddba55', beakShadow: '#b98f37', foot: '#a49b9e' },
+  { id: 'classic', name: '黄绿虎皮', base: '#9bd25e', chest: '#b7e66e', wing: '#d9dc63', featherEdge: '#edf09c', tail: '#4f8060', stripe: '#3e4d38', marking: '#4d5c42', throatDot: '#39483c', cheek: '#f2d552', cere: '#bdcee8', beak: '#d9ad42', beakShadow: '#ae7f2f', foot: '#a49a9a' },
+  { id: 'sunny', name: '纯黄小鸟', base: '#f2dc69', chest: '#fbea83', wing: '#e9cf58', featherEdge: '#f9e98a', tail: '#cfb447', stripe: '#d2b647', marking: '#d8bd50', throatDot: '#9e8940', cheek: '#f7e194', cere: '#e6c7b6', beak: '#d3a83c', beakShadow: '#ab7f2d', foot: '#aa9c99' },
+  { id: 'mint', name: '薄荷青', base: '#a9ddc6', chest: '#c8edd8', wing: '#89c9af', featherEdge: '#bee8d5', tail: '#568f7b', stripe: '#50796f', marking: '#668b80', throatDot: '#486a62', cheek: '#f0e2c4', cere: '#c7c9e7', beak: '#d9b24b', beakShadow: '#ad8431', foot: '#a19b9d' },
 ];
 
 export const PLUMAGES = BASE_PLUMAGES.map((plumage) => ({
