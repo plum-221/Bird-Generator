@@ -2,31 +2,29 @@ import * as THREE from 'three';
 
 const COPY = {
   'zh-CN': {
-    cat: [
-      '这块地毯归我了。',
-      '别催，我在长猫。',
-      '摸一下，收费一条鱼。',
-      '我没有胖，是毛在膨胀。',
-      '刚刚是谁偷看我？',
-      '喵生苦短，先躺一会。',
-      '尾巴有自己的想法。',
-      '这个窝勉强及格。',
-      '镜头过来，拍左脸。',
-      '随机可以，丑猫不行。',
-      '今天也被可爱耽误了。',
-      '再摸一下，就一下。',
+    bird: [
+      '你回来啦？',
+      '啾，我听见啦。',
+      '今天也陪我一会儿吧。',
+      '刚才那个声音是什么？',
+      '尾羽要放整齐。',
+      '这里看起来很安全。',
+      '我在认真观察你。',
+      '可以轻轻摸摸头。',
+      '阳光落在羽毛上啦。',
+      '等一下，我先歪个头。',
+      '这个小球会自己跑吗？',
+      '啾啾，今天心情很好。',
     ],
     fish: [
-      '别看我，我在装玩具。',
-      '我只是暂时不会游。',
-      '谁把海搬走了？',
-      '那只猫看起来很饿。',
-      '保持安静，我在盯屏幕。',
-      '尾巴是片，不是锥。',
-      '今天也逃过一口。',
-      '离猫远点，是生存智慧。',
-      '我眼神坚定，身体不一定。',
-      '请把我放回水里，谢谢。',
+      '我是会滚动的小伙伴。',
+      '小鸟刚才在看我。',
+      '别担心，我只是玩具。',
+      '地毯就是今天的海。',
+      '谁来轻轻推我一下？',
+      '我的尾巴今天很精神。',
+      '保持安静，我在晒太阳。',
+      '我们可以做朋友。',
     ],
     duck: [
       '嘎？这里不是池塘吗？',
@@ -34,20 +32,20 @@ const COPY = {
       '别踢我，我会滚。',
       '今天负责假装镇定。',
       '那条鱼看起来可疑。',
-      '猫大，我先让路。',
+      '小鸟来了，我让一点。',
       '嘎一下，气氛就有了。',
       '我只是黄，不代表胆小。',
       '刚才的雷不是我放的。',
       '窝满了，我睡地板。',
     ],
     weather: {
-      cat: {
-        thunder: ['谁把炸毛开关按了？', '打雷可以，别震我的窝。'],
-        rain: ['下鱼了？那我不困了。', '这雨闻起来有点鲜。'],
+      bird: {
+        thunder: ['雷声好大，我靠近一点。', '啾！刚才天空响了一下。'],
+        rain: ['雨点在唱歌。', '下雨了，羽毛要保持干燥。'],
       },
       fish: {
         thunder: ['先别劈，我是布的！'],
-        rain: ['天上掉同事了！', '这算不算鱼跃龙门？'],
+        rain: ['雨来了，地毯海涨潮啦。'],
       },
       duck: {
         thunder: ['嘎！我什么都没做！'],
@@ -56,31 +54,29 @@ const COPY = {
     },
   },
   'ja-JP': {
-    cat: [
-      'このラグ、いただき。',
-      '急かさないで、猫育ち中。',
-      'なでるなら魚一匹。',
-      '太ったんじゃない、毛です。',
-      '今見てたの、だれ？',
-      '猫生は短い。まず寝よう。',
-      'しっぽには考えがある。',
-      'この寝床、まあ合格。',
-      'カメラ、左顔からね。',
-      'ランダムでも可愛くして。',
-      '今日も可愛さが忙しい。',
-      'もう一回だけ、なでて。',
+    bird: [
+      'おかえり？',
+      'ピッ、ちゃんと聞こえたよ。',
+      '今日もそばにいてね。',
+      '今の音、なんだろう？',
+      '尾羽をきれいに整えよう。',
+      'ここなら安心できそう。',
+      'じっと観察しています。',
+      '頭をそっとなでてね。',
+      '羽にお日さまが当たったよ。',
+      'ちょっと首をかしげます。',
+      'このボール、自分で動くの？',
+      'ピヨピヨ、今日はごきげん。',
     ],
     fish: [
-      '見ないで、玩具のふり中。',
-      '今だけ泳げないんです。',
-      '海はどこへ行った？',
-      'あの猫、お腹すいてそう。',
-      '静かに。画面を見張ってる。',
-      'しっぽは板、コーンじゃない。',
-      '今日も一口を逃れた。',
-      '猫との距離は命の距離。',
-      '目は強気、体は弱気。',
-      '水へ戻してください。',
+      'ころころ転がる仲間です。',
+      '小鳥がこっちを見ていたよ。',
+      '心配しないで、玩具です。',
+      '今日はラグが海なんだ。',
+      'だれかそっと押してくれる？',
+      '尾びれは今日も元気です。',
+      '静かに日なたぼっこ中。',
+      '友だちになれるかな。',
     ],
     duck: [
       'ガー？池じゃないの？',
@@ -88,20 +84,20 @@ const COPY = {
       '蹴らないで、転がるよ。',
       '今日は平静のふり担当。',
       'あの魚、ちょっと怪しい。',
-      '猫が大きいので道を譲る。',
+      '小鳥が来たので少し譲る。',
       'ガーで空気が整います。',
       '黄色でも怖がりじゃない。',
       'さっきの雷、私じゃない。',
       '寝床が満員。床で寝る。',
     ],
     weather: {
-      cat: {
-        thunder: ['だれが逆毛スイッチ押した？', '雷はいいけど寝床は揺らすな。'],
-        rain: ['魚が降る？目が覚めた。', 'この雨、ちょっと新鮮。'],
+      bird: {
+        thunder: ['雷、大きいね。少し近くにいて。', 'ピッ！空が鳴ったよ。'],
+        rain: ['雨粒が歌ってる。', '雨だ。羽を濡らさないようにしよう。'],
       },
       fish: {
         thunder: ['落とさないで、布製です！'],
-        rain: ['空から仲間が降ってきた！', 'これが魚の出世コース？'],
+        rain: ['雨だ。ラグの海が満ちてきた。'],
       },
       duck: {
         thunder: ['ガー！何もしてない！'],
@@ -110,31 +106,29 @@ const COPY = {
     },
   },
   en: {
-    cat: [
-      'This rug is mine now.',
-      'Do not rush me. I am catting.',
-      'One pet costs one fish.',
-      'Not chubby. Just extra fluffy.',
-      'Who was staring at me?',
-      'Life is short. Nap first.',
-      'My tail has its own plans.',
-      'This nest barely passes.',
-      'Camera, get my left side.',
-      'Random is fine. Ugly is not.',
-      'Too busy being cute today.',
-      'One more pet. Just one.',
+    bird: [
+      'You are back!',
+      'Chirp, I heard you.',
+      'Stay with me for a while.',
+      'What was that sound?',
+      'Time to straighten my tail feathers.',
+      'This place feels safe.',
+      'I am watching you carefully.',
+      'A gentle head scratch, please.',
+      'Sunlight found my feathers.',
+      'Wait. I need to tilt my head.',
+      'Does this little ball move by itself?',
+      'Chirp chirp. I feel happy today.',
     ],
     fish: [
-      'Do not look. I am a toy.',
-      'I am temporarily unable to swim.',
-      'Who moved the ocean?',
-      'That cat looks hungry.',
-      'Quiet. I am watching the screen.',
-      'Flat tail. Not a cone.',
-      'Survived another snack time.',
-      'Distance from cat equals survival.',
-      'Bold eyes, uncertain body.',
-      'Please return me to water.',
+      'I am the rolling little friend.',
+      'The little bird was watching me.',
+      'No worries. I am only a toy.',
+      'The rug is today’s ocean.',
+      'Will someone give me a gentle push?',
+      'My tail feels lively today.',
+      'Quiet. I am sunbathing.',
+      'Maybe we can be friends.',
     ],
     duck: [
       'Quack? This is not a pond?',
@@ -142,20 +136,20 @@ const COPY = {
       'Do not kick me. I roll.',
       'Pretending to be calm today.',
       'That fish looks suspicious.',
-      'Big cat. I will make room.',
+      'Little bird coming through. I will move.',
       'One quack fixes the mood.',
       'Yellow does not mean timid.',
       'That thunder was not me.',
       'Nest full. Floor it is.',
     ],
     weather: {
-      cat: {
-        thunder: ['Who pressed the fluff switch?', 'Thunder is fine. Leave my nest.'],
-        rain: ['Raining fish? I am awake.', 'This rain smells suspiciously fresh.'],
+      bird: {
+        thunder: ['That thunder was loud. Stay close.', 'Chirp! The sky made a sound.'],
+        rain: ['The raindrops are singing.', 'Rain! I should keep my feathers dry.'],
       },
       fish: {
         thunder: ['Do not zap me. I am fabric!'],
-        rain: ['It is raining coworkers!', 'Is this upward mobility for fish?'],
+        rain: ['Rain! The rug ocean is rising.'],
       },
       duck: {
         thunder: ['Quack! I did nothing!'],
@@ -166,7 +160,7 @@ const COPY = {
 };
 
 const ROLE_WEIGHTS = [
-  ['cat', 0.5],
+  ['bird', 0.5],
   ['fish', 0.26],
   ['duck', 0.24],
 ];
@@ -192,7 +186,7 @@ function weightedRole(availableRoles) {
     cursor -= weight;
     if (cursor <= 0) return role;
   }
-  return choices.at(-1)?.[0] ?? 'cat';
+  return choices.at(-1)?.[0] ?? 'bird';
 }
 
 function localizedCopy(locale) {
@@ -200,7 +194,7 @@ function localizedCopy(locale) {
 }
 
 function actorAnchor(actor, role) {
-  if (role === 'cat') {
+  if (role === 'bird') {
     actor.updateWorldMatrix(true, false);
     anchorWorld.copy(actor.userData.headC ?? new THREE.Vector3(0, 1, 0));
     anchorWorld.y += (actor.userData.hr ?? 0.42) * 1.02;
@@ -237,8 +231,8 @@ export function createSpeechBubbleController({
 
   function availableActors() {
     const result = new Map();
-    const cat = getCat();
-    if (cat?.visible) result.set('cat', [cat]);
+    const bird = getCat();
+    if (bird?.visible) result.set('bird', [bird]);
     for (const toy of getToys()) {
       if (!toy.mesh.visible || !['fish', 'duck'].includes(toy.kind)) continue;
       if (!result.has(toy.kind)) result.set(toy.kind, []);
@@ -291,7 +285,8 @@ export function createSpeechBubbleController({
     const actors = availableActors();
     if (!actors.size) return false;
     const roles = new Set(actors.keys());
-    const role = roles.has(preferredRole) ? preferredRole : weightedRole(roles);
+    const normalizedRole = preferredRole === 'cat' ? 'bird' : preferredRole;
+    const role = roles.has(normalizedRole) ? normalizedRole : weightedRole(roles);
     const roleActors = actors.get(role);
     const actor = pickRandom(roleActors);
     const text = messageFor(role);

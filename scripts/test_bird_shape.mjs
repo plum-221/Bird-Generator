@@ -21,7 +21,17 @@ assert.equal(bird.userData.birdParts.eyeGroups.length, 2);
 assert.ok(bird.userData.birdParts.face, 'face must move with the head');
 assert.ok(bird.userData.visualProfile, 'bird must publish visual profile metadata');
 assert.equal(bird.userData.visualProfile.species, 'budgerigar');
+assert.equal(bird.userData.visualProfile.modelVersion, 'sdf-v3');
 assert.ok(bird.userData.visualProfile.tailToBodyRatio >= 0.48);
+assert.equal(bird.getObjectByName('body').geometry.userData.meshMode, 'bird-sdf-v3');
+
+const attachments = bird.userData.attachments;
+assert.ok(attachments, 'bird must publish anatomical attachments');
+assert.ok(attachments.leftWingRoot.x < -0.18 && attachments.leftWingRoot.y > 0.7, 'left wing root must sit on shoulder-back');
+assert.ok(attachments.rightWingRoot.x > 0.18 && attachments.rightWingRoot.y > 0.7, 'right wing root must sit on shoulder-back');
+assert.ok(Math.abs(attachments.tailRoot.x) < 0.03 && attachments.tailRoot.z < -0.2, 'tail must start at rump midline');
+assert.ok(attachments.leftHip.y < 0.3 && attachments.rightHip.y < 0.3, 'legs must start below abdomen');
+assert.ok(Math.abs(attachments.leftHip.x + attachments.rightHip.x) < 0.001, 'hips must be symmetric');
 
 const bounds = new Box3()
   .setFromObject(bird.getObjectByName('body'))

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createRng } from './rng.js';
+import { meshFromSDF, sphere } from './sdf.js';
 import { PLUMAGES } from './birdPresets.js';
 import { clampBirdParams } from './birdParams.js';
 
@@ -15,9 +16,10 @@ const TOON_GRADIENT = (() => {
 })();
 
 const OUTLINE_COLOR = '#625650';
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 function toon(color) {
-  return new THREE.MeshToonMaterial({ color, gradientMap: TOON_GRADIENT, emissive: color, emissiveIntensity: 0.075 });
+  return new THREE.MeshToonMaterial({ color, gradientMap: TOON_GRADIENT, emissive: color, emissiveIntensity: 0.065 });
 }
 
 function addOutlined(parent, geometry, material, name, transform = {}, outlineScale = 1.018) {
@@ -39,241 +41,210 @@ function addOutlined(parent, geometry, material, name, transform = {}, outlineSc
   return group;
 }
 
-function addPlain(parent, geometry, material, name, transform = {}) {
-  const group = new THREE.Group();
-  group.name = `${name}Group`;
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = name;
-  group.add(mesh);
-  if (transform.position) group.position.copy(transform.position);
-  if (transform.rotation) group.rotation.set(...transform.rotation);
-  if (transform.scale) group.scale.set(...transform.scale);
-  parent.add(group);
-  return group;
-}
-
-function capsuleBetween(a, b, radius, segments, material, parent, name, outlineScale = 1.018) {
+function capsuleBetween(a, b, radius, segments, material, parent, name) {
   const length = a.distanceTo(b);
   const geometry = new THREE.CapsuleGeometry(radius, Math.max(0.01, length - radius * 2), 5, segments);
-  const group = addOutlined(parent, geometry, material, name, {}, outlineScale);
+  const group = addOutlined(parent, geometry, material, name, {}, 1.012);
   group.position.copy(a).lerp(b, 0.5);
-  group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+  group.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize());
   return group;
-}
-
-function createPearGeometry(segments) {
-  const profile = [
-    [0.10, -0.45], [0.29, -0.41], [0.40, -0.27], [0.43, -0.05],
-    [0.38, 0.17], [0.29, 0.34], [0.15, 0.43], [0.05, 0.45],
-  ].map(([radius, y]) => new THREE.Vector2(radius, y));
-  return new THREE.LatheGeometry(profile, segments);
 }
 
 function createWingGeometry() {
   const shape = new THREE.Shape();
-  shape.moveTo(0, 0.31);
-  shape.bezierCurveTo(0.18, 0.24, 0.21, -0.05, 0.08, -0.36);
-  shape.bezierCurveTo(0.02, -0.43, -0.04, -0.43, -0.09, -0.35);
-  shape.bezierCurveTo(-0.20, -0.05, -0.17, 0.23, 0, 0.31);
+  shape.moveTo(0, 0);
+  shape.bezierCurveTo(0.21, -0.04, 0.24, -0.34, 0.08, -0.53);
+  shape.bezierCurveTo(0.02, -0.60, -0.04, -0.60, -0.09, -0.52);
+  shape.bezierCurveTo(-0.23, -0.28, -0.19, -0.05, 0, 0);
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.065, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.018, bevelThickness: 0.018,
+    depth: 0.06, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.016, bevelThickness: 0.016,
   });
-  geometry.translate(0, 0, -0.0325);
+  geometry.translate(0, 0, -0.03);
   return geometry;
 }
 
-function createFeatherGeometry(length, width, segments) {
-  return new THREE.CapsuleGeometry(width, Math.max(0.04, length - width * 2), 5, Math.max(8, segments));
-}
-
-function createTailFeatherGeometry(length, width) {
+function createRootedFeather(length, width) {
   const shape = new THREE.Shape();
-  shape.moveTo(0, length * 0.5);
-  shape.bezierCurveTo(width, length * 0.32, width * 0.78, -length * 0.28, 0, -length * 0.5);
-  shape.bezierCurveTo(-width * 0.78, -length * 0.28, -width, length * 0.32, 0, length * 0.5);
+  shape.moveTo(0, 0);
+  shape.bezierCurveTo(width, -length * 0.18, width * 0.72, -length * 0.72, 0, -length);
+  shape.bezierCurveTo(-width * 0.72, -length * 0.72, -width, -length * 0.18, 0, 0);
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.032, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: 0.008, bevelThickness: 0.008,
+    depth: 0.034, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: 0.008, bevelThickness: 0.008,
   });
-  geometry.translate(0, 0, -0.016);
+  geometry.translate(0, 0, -0.017);
   return geometry;
 }
 
-function addWing(parent, side, center, scale, materials, segments) {
+function addWing(parent, side, root, scale, materials, nearSide) {
   const wing = new THREE.Group();
   wing.name = side < 0 ? 'leftWing' : 'rightWing';
-  wing.position.copy(center);
-  wing.rotation.z = side * -0.055;
-  wing.scale.set(scale * 1.22, scale * 0.86, scale);
+  wing.position.copy(root);
+  wing.rotation.z = side * -0.035;
+  wing.rotation.y = side * 0.08;
+  wing.scale.set(scale * 1.16, scale, scale);
   parent.add(wing);
 
   addOutlined(wing, createWingGeometry(), materials.wing, 'wingShell', {
-    scale: [side, 1, 1], rotation: [0.06, 0, 0],
+    scale: [side, 1, 1],
   });
   for (let i = 0; i < 4; i++) {
-    addOutlined(
-      wing,
-      createFeatherGeometry(0.22 + i * 0.035, 0.014 + i * 0.002, Math.max(8, segments / 2)),
-      i === 0 ? materials.stripe : materials.featherEdge,
-      `wingFeather${i}`,
-      {
-        position: new THREE.Vector3(side * (0.045 + i * 0.024), -0.085 - i * 0.052, 0.096),
-        rotation: [0.12, 0, side * (0.08 + i * 0.025)],
-        scale: [1, 1, 0.62],
-      },
-      1.012
+    const line = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.008, 0.13 + i * 0.022, 3, 7),
+      i === 0 ? materials.stripe : materials.featherEdge
     );
+    line.name = `wingFeather${i}`;
+    line.position.set(side * (0.035 + i * 0.025), -0.26 - i * 0.048, 0.058);
+    line.rotation.z = side * (0.14 + i * 0.035);
+    wing.add(line);
   }
+  wing.userData.isNearSide = nearSide;
   return wing;
 }
 
-function addTail(parent, bodyY, params, materials) {
+function addTail(parent, root, params, materials) {
   const tail = new THREE.Group();
   tail.name = 'tail';
-  tail.position.set(0.10, bodyY + 0.12, -0.03);
-  tail.rotation.x = 0.08 + params.tailCurl * 0.1;
-  tail.rotation.z = 0.72;
+  tail.position.copy(root);
   parent.add(tail);
 
-  const mainLength = 0.69 * params.tailLength;
+  const length = 0.72 * params.tailLength;
   for (const [side, name] of [[-1, 'mainTailLeft'], [1, 'mainTailRight']]) {
-    addOutlined(
-      tail,
-      createTailFeatherGeometry(mainLength, 0.088),
-      materials.tail,
-      name,
-      {
-        position: new THREE.Vector3(side * 0.072, -mainLength * 0.26, side * 0.012),
-        rotation: [0.10, 0, side * 0.045],
-        scale: [1, 1, 0.84],
-      }
-    );
+    addOutlined(tail, createRootedFeather(length, 0.062), materials.tail, name, {
+      position: V(side * 0.025, 0, side * 0.008),
+      rotation: [0.70 + params.tailCurl * 0.08, 0, side * 0.025],
+    });
   }
   for (const [side, name] of [[-1, 'sideTailLeft'], [1, 'sideTailRight']]) {
-    const length = mainLength * 0.72;
-    addOutlined(
-      tail,
-      createTailFeatherGeometry(length, 0.096),
-      materials.wing,
-      name,
-      {
-        position: new THREE.Vector3(side * 0.135, -length * 0.22, 0.018),
-        rotation: [0.06, 0, side * 0.13],
-        scale: [1, 1, 0.84],
-      }
-    );
+    addOutlined(tail, createRootedFeather(length * 0.68, 0.068), materials.wing, name, {
+      position: V(side * 0.075, -0.015, 0.012),
+      rotation: [0.60 + params.tailCurl * 0.06, 0, side * 0.10],
+    });
   }
   return tail;
 }
 
-function addFoot(parent, side, floorY, z, legLength, materials, segments) {
-  const x = side * 0.135;
-  const legTop = new THREE.Vector3(x, floorY + 0.25 * legLength, z - 0.015);
-  const ankle = new THREE.Vector3(x, floorY + 0.045, z);
-  const leg = capsuleBetween(legTop, ankle, 0.022, Math.max(7, segments / 2), materials.foot, parent, side < 0 ? 'leftLeg' : 'rightLeg');
-
-  const foot = new THREE.Group();
-  foot.name = side < 0 ? 'leftFoot' : 'rightFoot';
-  parent.add(foot);
+function addFoot(parent, side, hip, floorY, materials, segments) {
   const prefix = side < 0 ? 'left' : 'right';
-  const toeSpecs = [
-    ['ToeFrontOuter', side * 0.035, 0.155], ['ToeFrontInner', side * -0.018, 0.135],
-    ['ToeBackOuter', side * 0.042, -0.105], ['ToeBackInner', side * -0.016, -0.09],
+  const ankle = V(side * 0.13, floorY + 0.048, 0.075);
+  const leg = capsuleBetween(hip, ankle, 0.021, Math.max(7, segments / 2), materials.foot, parent, `${prefix}Leg`);
+  const foot = new THREE.Group();
+  foot.name = `${prefix}Foot`;
+  parent.add(foot);
+
+  const toes = [
+    ['ToeFrontOuter', side * 0.042, 0.155], ['ToeFrontInner', side * -0.018, 0.132],
+    ['ToeBackOuter', side * 0.044, -0.105], ['ToeBackInner', side * -0.016, -0.09],
   ];
-  for (const [suffix, dx, dz] of toeSpecs) {
+  for (const [suffix, dx, dz] of toes) {
     capsuleBetween(
-      new THREE.Vector3(x, floorY + 0.026, z),
-      new THREE.Vector3(x + dx, floorY + 0.016, z + dz),
+      ankle,
+      V(ankle.x + dx, floorY + 0.014, ankle.z + dz),
       0.0105,
       6,
       materials.foot,
       foot,
-      `${prefix}${suffix}`,
-      1.012
+      `${prefix}${suffix}`
     );
   }
   return leg;
 }
 
-function addEye(head, side, headRadius, material, eyeSize) {
-  const eyeGroup = new THREE.Group();
+function addEye(face, side, headRadius, material, eyeSize) {
   const prefix = side < 0 ? 'left' : 'right';
-  eyeGroup.name = `${prefix}EyeGroup`;
-  eyeGroup.position.set(side * headRadius * 0.58, headRadius * 0.10, headRadius * 0.80);
-  head.add(eyeGroup);
+  const group = new THREE.Group();
+  group.name = `${prefix}EyeGroup`;
+  group.position.set(side * headRadius * 0.55, headRadius * 0.08, headRadius * 0.83);
+  face.add(group);
 
-  const eyeRadius = headRadius * 0.128 * eyeSize;
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeRadius, 18, 12), material);
+  const radius = headRadius * 0.105 * eyeSize;
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 12), material);
   eye.name = `${prefix}Eye`;
   eye.scale.z = 0.48;
-  eyeGroup.add(eye);
-
+  group.add(eye);
   const highlight = new THREE.Mesh(
-    new THREE.SphereGeometry(eyeRadius * 0.29, 10, 8),
-    new THREE.MeshBasicMaterial({ color: '#fffdf5' })
+    new THREE.SphereGeometry(radius * 0.28, 10, 8),
+    new THREE.MeshBasicMaterial({ color: '#fffdf7' })
   );
   highlight.name = `${prefix}EyeHighlight`;
-  highlight.position.set(-eyeRadius * 0.25, eyeRadius * 0.30, eyeRadius * 0.50);
-  eyeGroup.add(highlight);
-  return eyeGroup;
+  highlight.position.set(-radius * 0.26, radius * 0.30, radius * 0.48);
+  group.add(highlight);
+  return group;
 }
 
-function addFace(head, headRadius, params, materials) {
+function addFace(headRig, headRadius, params, materials) {
   const face = new THREE.Group();
   face.name = 'face';
-  head.add(face);
+  headRig.add(face);
   const eyeGroups = [
     addEye(face, -1, headRadius, materials.eyeLeft, params.eyeSize),
     addEye(face, 1, headRadius, materials.eyeRight, params.eyeSize),
   ];
 
   for (const side of [-1, 1]) {
-    addOutlined(face, new THREE.SphereGeometry(headRadius * 0.135, 14, 9), materials.cheek, side < 0 ? 'leftCheek' : 'rightCheek', {
-      position: new THREE.Vector3(side * headRadius * 0.55, -headRadius * 0.22, headRadius * 0.80),
-      scale: [1.06, 0.72, 0.34],
-    }, 1.012);
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(headRadius * 0.12, 14, 9), materials.cheek);
+    cheek.name = side < 0 ? 'leftCheek' : 'rightCheek';
+    cheek.position.set(side * headRadius * 0.53, -headRadius * 0.20, headRadius * 0.84);
+    cheek.scale.set(1.05, 0.72, 0.32);
+    face.add(cheek);
     for (let i = 0; i < 2; i++) {
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(headRadius * 0.025, 8, 6), materials.throatDot);
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(headRadius * 0.022, 8, 6), materials.throatDot);
       dot.name = `${side < 0 ? 'left' : 'right'}ThroatDot${i}`;
-      dot.position.set(side * headRadius * (0.28 + i * 0.09), -headRadius * (0.34 + i * 0.035), headRadius * 0.92);
+      dot.position.set(side * headRadius * (0.28 + i * 0.085), -headRadius * (0.32 + i * 0.03), headRadius * 0.94);
       face.add(dot);
     }
   }
 
   for (const side of [-1, 1]) {
     for (let i = 0; i < 3; i++) {
-      addOutlined(face, new THREE.CapsuleGeometry(headRadius * 0.014, headRadius * (0.075 + i * 0.012), 3, 7), materials.marking, `foreheadMark${side}-${i}`, {
-        position: new THREE.Vector3(side * headRadius * (0.20 + i * 0.11), headRadius * (0.49 - i * 0.04), headRadius * (0.90 + i * 0.01)),
-        rotation: [0, 0, side * (0.68 - i * 0.08)],
-        scale: [1, 1, 0.38],
-      }, 1.008);
+      const mark = new THREE.Mesh(new THREE.CapsuleGeometry(headRadius * 0.012, headRadius * 0.07, 3, 7), materials.marking);
+      mark.name = `foreheadMark${side}-${i}`;
+      mark.position.set(side * headRadius * (0.18 + i * 0.105), headRadius * (0.47 - i * 0.035), headRadius * 0.91);
+      mark.rotation.z = side * (0.65 - i * 0.08);
+      mark.scale.z = 0.36;
+      face.add(mark);
     }
   }
 
-  addOutlined(face, new THREE.SphereGeometry(headRadius * 0.18, 14, 9), materials.cere, 'cere', {
-    position: new THREE.Vector3(0, -headRadius * 0.06, headRadius * 0.91),
-    scale: [1.14, 0.50, 0.44],
-  }, 1.012);
+  addOutlined(face, new THREE.SphereGeometry(headRadius * 0.17, 14, 9), materials.cere, 'cere', {
+    position: V(0, -headRadius * 0.07, headRadius * 0.94),
+    scale: [1.12, 0.48, 0.42],
+  }, 1.01);
   for (const side of [-1, 1]) {
-    const nostril = new THREE.Mesh(new THREE.SphereGeometry(headRadius * 0.018, 8, 6), materials.throatDot);
+    const nostril = new THREE.Mesh(new THREE.SphereGeometry(headRadius * 0.017, 8, 6), materials.throatDot);
     nostril.name = side < 0 ? 'leftNostril' : 'rightNostril';
-    nostril.position.set(side * headRadius * 0.075, -headRadius * 0.045, headRadius * 0.995);
+    nostril.position.set(side * headRadius * 0.075, -headRadius * 0.055, headRadius * 1.02);
     face.add(nostril);
   }
-  addOutlined(face, new THREE.SphereGeometry(headRadius * 0.17, 14, 9), materials.beak, 'upperBeak', {
-    position: new THREE.Vector3(0, -headRadius * 0.22, headRadius * 1.00),
-    scale: [1.00, 0.74, 0.76],
+  addOutlined(face, new THREE.SphereGeometry(headRadius * 0.16, 14, 9), materials.beak, 'upperBeak', {
+    position: V(0, -headRadius * 0.22, headRadius * 1.02),
+    scale: [0.96, 0.72, 0.78],
   });
-  addOutlined(face, new THREE.ConeGeometry(headRadius * 0.075, headRadius * 0.17, 14), materials.beak, 'beakHook', {
-    position: new THREE.Vector3(0, -headRadius * 0.315, headRadius * 1.025),
+  addOutlined(face, new THREE.ConeGeometry(headRadius * 0.07, headRadius * 0.15, 14), materials.beak, 'beakHook', {
+    position: V(0, -headRadius * 0.315, headRadius * 1.04),
     rotation: [0, 0, Math.PI],
     scale: [0.72, 0.82, 0.64],
   }, 1.01);
-  addOutlined(face, new THREE.ConeGeometry(headRadius * 0.09, headRadius * 0.19, 14), materials.beakShadow, 'lowerBeak', {
-    position: new THREE.Vector3(0, -headRadius * 0.37, headRadius * 0.99),
+  addOutlined(face, new THREE.ConeGeometry(headRadius * 0.08, headRadius * 0.16, 14), materials.beakShadow, 'lowerBeak', {
+    position: V(0, -headRadius * 0.35, headRadius * 1.00),
     rotation: [Math.PI, 0, 0],
-    scale: [0.92, 1, 0.72],
-  }, 1.012);
+    scale: [0.82, 0.85, 0.68],
+  }, 1.01);
   return { face, eyeGroups };
+}
+
+function createBodyPrimitives(params, headC, headRadius, attachments) {
+  const fluff = params.fluffy ? params.furFluff : 0.3;
+  const width = 0.94 + (params.chubbiness - 1) * 0.16 + fluff * 0.014;
+  const prims = [];
+  const P = (primitive) => prims.push(primitive);
+  P(sphere({ c: V(0, 0.48, 0), r: 0.37, s: [1.02 * width, 1.02, 0.76 * width], k: 0.16, tag: 'belly' }));
+  P(sphere({ c: V(0, 0.69, 0.035), r: 0.32, s: [0.93 * width, 1.10, 0.74 * width], k: 0.17, tag: 'chest' }));
+  P(sphere({ c: V(0, 0.86, 0.02), r: 0.25, s: [0.90 * width, 0.96, 0.78 * width], k: 0.16, tag: 'neck' }));
+  P(sphere({ c: headC, r: headRadius, s: [1, 1.06, 0.93], k: 0.18, tag: 'head' }));
+  P(sphere({ c: V(0, headC.y + headRadius * 0.62, headC.z - 0.01), r: headRadius * 0.58, s: [1.18, 0.78, 1], k: 0.13, tag: 'crown' }));
+  P(sphere({ c: attachments.leftWingRoot, r: 0.14, s: [1, 0.88, 0.82], k: 0.14, tag: 'shoulder' }));
+  P(sphere({ c: attachments.rightWingRoot, r: 0.14, s: [1, 0.88, 0.82], k: 0.14, tag: 'shoulder' }));
+  return prims;
 }
 
 export function buildBird(rawParams, quality = 'full') {
@@ -285,85 +256,82 @@ export function buildBird(rawParams, quality = 'full') {
   const root = new THREE.Group();
   root.name = 'bird';
 
-  const fluff = params.fluffy ? params.furFluff : 0.3;
-  const widthScale = 0.94 + (params.chubbiness - 1) * 0.18 + fluff * 0.018;
-  const bodyY = 0.56;
-  const bodyHeight = 0.90 + fluff * 0.012;
-  const headRadius = 0.25 * params.headSize;
-  const headC = new THREE.Vector3(0, bodyY + 0.39, 0.055);
+  const headRadius = 0.255 * params.headSize;
+  const headC = V(0, 1.02, 0.045);
+  const attachments = {
+    leftWingRoot: V(-0.285, 0.79, -0.005),
+    rightWingRoot: V(0.285, 0.79, -0.005),
+    tailRoot: V(0, 0.56, -0.285),
+    leftHip: V(-0.12, 0.225, 0.005),
+    rightHip: V(0.12, 0.225, 0.005),
+  };
   const eyeLeftColor = params.eyeColor || '#171716';
   const eyeRightColor = params.oddEyes ? params.eyeColorRight : eyeLeftColor;
   const materials = {
-    body: toon(plumage.base), chest: toon(plumage.chest), wing: toon(plumage.wing),
-    featherEdge: toon(plumage.featherEdge || plumage.chest), tail: toon(plumage.tail || plumage.wing),
-    stripe: toon(plumage.stripe), marking: toon(plumage.marking || plumage.stripe),
+    body: toon(plumage.base), wing: toon(plumage.wing), featherEdge: toon(plumage.featherEdge || plumage.chest),
+    tail: toon(plumage.tail || plumage.wing), stripe: toon(plumage.stripe), marking: toon(plumage.marking || plumage.stripe),
     cheek: toon(plumage.cheek), cere: toon(plumage.cere), beak: toon(plumage.beak),
-    beakShadow: toon(plumage.beakShadow || '#c99632'), foot: toon(plumage.foot || '#a99b9a'),
-    eyeLeft: toon(eyeLeftColor), eyeRight: toon(eyeRightColor), throatDot: toon(plumage.throatDot || '#8d8880'),
+    beakShadow: toon(plumage.beakShadow || '#c89532'), foot: toon(plumage.foot || '#aa9c9c'),
+    eyeLeft: toon(eyeLeftColor), eyeRight: toon(eyeRightColor), throatDot: toon(plumage.throatDot || '#8e8985'),
   };
 
-  const hitGeometry = new THREE.CapsuleGeometry(0.36 * widthScale, 0.64, 8, segments);
-  const fur = new THREE.Mesh(hitGeometry, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
-  fur.name = 'fur';
-  fur.position.set(0, bodyY + 0.12, 0);
-  fur.scale.set(1, 1.08, 0.82);
-  fur.geometry.userData.meshCellSize = quality === 'draft' ? 0.09 : 0.055;
-  fur.geometry.userData.meshMode = `bird-${quality}`;
-  root.add(fur);
+  const prims = createBodyPrimitives(params, headC, headRadius, attachments);
+  const cellSize = quality === 'draft' ? 0.064 : 0.042;
+  const bodyGeometry = meshFromSDF(prims, cellSize, -0.12);
+  bodyGeometry.userData.meshCellSize = cellSize;
+  bodyGeometry.userData.meshQuality = quality;
+  bodyGeometry.userData.meshMode = 'bird-sdf-v3';
 
   const visible = new THREE.Group();
   visible.name = 'birdVisible';
-  visible.rotation.y = -0.43;
+  visible.rotation.y = -0.22;
   root.add(visible);
 
-  const body = addOutlined(visible, createPearGeometry(segments), materials.body, 'body', {
-    position: new THREE.Vector3(0, bodyY, 0),
-    scale: [0.90 * widthScale, bodyHeight, 0.65 * widthScale],
-  });
-  const neckBridge = addPlain(visible, new THREE.SphereGeometry(0.30, segments, Math.max(12, segments / 2)), materials.body, 'neckBridge', {
-    position: new THREE.Vector3(0, bodyY + 0.285, 0.01),
-    scale: [0.86 * widthScale, 0.76, 0.64 * widthScale],
-  });
-  const chest = addPlain(visible, new THREE.SphereGeometry(0.31, segments, Math.max(12, segments / 2)), materials.chest, 'chest', {
-    position: new THREE.Vector3(0, bodyY - 0.045, 0.255),
-    scale: [0.75 * widthScale, 1.04, 0.30],
-  });
-  const head = addOutlined(visible, new THREE.SphereGeometry(headRadius, segments, Math.max(12, segments / 2)), materials.body, 'head', {
-    position: headC,
-    scale: [1.00, 1.05 + fluff * 0.012, 0.90],
-    rotation: [0, 0.10, 0.025],
-  });
+  const fur = new THREE.Mesh(bodyGeometry, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+  fur.name = 'fur';
+  fur.geometry.userData.meshMode = 'bird-sdf-v3';
+  visible.add(fur);
+  const body = addOutlined(visible, bodyGeometry, materials.body, 'body');
 
-  const wingScale = 0.82 + (params.earSize - 1) * 0.28;
-  const leftWing = addWing(visible, -1, new THREE.Vector3(-0.225 * widthScale, bodyY + 0.055, 0.19), wingScale, materials, segments);
-  const rightWing = addWing(visible, 1, new THREE.Vector3(0.225 * widthScale, bodyY + 0.055, 0.19), wingScale, materials, segments);
-  const tail = addTail(visible, bodyY, params, materials);
+  const head = new THREE.Group();
+  head.name = 'head';
+  head.position.copy(headC);
+  head.rotation.y = 0.08;
+  visible.add(head);
   const { face, eyeGroups } = addFace(head, headRadius, params, materials);
+
+  const chest = new THREE.Group();
+  chest.name = 'chest';
+  chest.position.set(0, 0.68, 0.21);
+  visible.add(chest);
+
+  const wingScale = 0.84 + (params.earSize - 1) * 0.26;
+  const leftWing = addWing(visible, -1, attachments.leftWingRoot.clone().add(V(0, -0.03, -0.015)), wingScale, materials, false);
+  const rightWing = addWing(visible, 1, attachments.rightWingRoot.clone().add(V(0, -0.03, 0.15)), wingScale, materials, true);
+  const tail = addTail(visible, attachments.tailRoot, params, materials);
 
   const feet = new THREE.Group();
   feet.name = 'feet';
   visible.add(feet);
-  addFoot(feet, -1, 0, 0.075, params.legLength, materials, segments);
-  addFoot(feet, 1, 0, 0.075, params.legLength, materials, segments);
+  addFoot(feet, -1, attachments.leftHip, 0, materials, segments);
+  addFoot(feet, 1, attachments.rightHip, 0, materials, segments);
 
   if (params.pose === 'loaf' || params.pose === 'containerCrouch' || params.pose === 'slouchSit') {
-    visible.position.y -= 0.11;
-    body.scale.y *= 0.82;
-    body.scale.x *= 1.08;
+    visible.position.y -= 0.08;
+    body.scale.y *= 0.90;
     feet.visible = false;
   } else if (params.pose === 'stretch') {
-    leftWing.rotation.z = -0.78;
-    rightWing.rotation.z = 0.78;
-    head.rotation.x = -0.10;
+    leftWing.rotation.z = -0.95;
+    rightWing.rotation.z = 0.95;
+    head.rotation.x = -0.08;
   } else if (params.pose === 'biped') {
-    body.scale.y *= 1.10;
-    head.position.y += 0.07;
+    body.scale.y *= 1.06;
+    head.position.y += 0.045;
   } else if (params.pose === 'sideFlat') {
     visible.rotation.z = Math.PI * 0.42;
     visible.position.y += 0.08;
   } else if (params.pose === 'banana') {
-    tail.scale.y *= 1.20;
-    body.scale.y *= 1.05;
+    tail.scale.y *= 1.16;
   }
 
   const surfaceDetails = new THREE.Group();
@@ -384,17 +352,18 @@ export function buildBird(rawParams, quality = 'full') {
 
   root.userData.headC = headC.clone();
   root.userData.hr = headRadius;
-  root.userData.muzzle = new THREE.Vector3(0, headC.y - headRadius * 0.22, headC.z + headRadius * 0.96);
-  root.userData.buttC = new THREE.Vector3(0, bodyY - 0.08, -0.25);
+  root.userData.muzzle = V(0, headC.y - headRadius * 0.20, headC.z + headRadius);
+  root.userData.buttC = attachments.tailRoot.clone();
+  root.userData.attachments = Object.fromEntries(Object.entries(attachments).map(([key, value]) => [key, value.clone()]));
   root.userData.colliders = [
-    { c: new THREE.Vector3(0, bodyY, 0), r: 0.37 * widthScale },
+    { c: V(0, 0.56, 0), r: 0.37 },
     { c: headC.clone(), r: headRadius },
   ];
   root.userData.visualProfile = {
-    species: 'budgerigar', realism: 0.7, anime: 0.3,
-    tailToBodyRatio: 0.69 * params.tailLength / bodyHeight,
+    species: 'budgerigar', modelVersion: 'sdf-v3', realism: 0.7, anime: 0.3,
+    tailToBodyRatio: 0.72 * params.tailLength / 0.90,
   };
-  root.userData.birdParts = { body, chest, neckBridge, head, face, leftWing, rightWing, tail, feet, eyeGroups };
+  root.userData.birdParts = { body, chest, head, face, leftWing, rightWing, tail, feet, eyeGroups };
   root.userData.resetBirdParts = resetParts;
   root.userData.updateEyeAnimation = (time, gazeX = 0, gazeY = 0) => {
     const blink = Math.sin(time * 0.81 + params.seed * 0.13) > 0.982 ? 0.10 : 1;
@@ -406,21 +375,19 @@ export function buildBird(rawParams, quality = 'full') {
   };
   root.userData.updateStaticIdle = (time, enabled = true) => {
     if (!enabled) return { enabled: false };
-    const breath = Math.sin(time * 2.25) * 0.010;
+    const breath = Math.sin(time * 2.25) * 0.006;
     const curiosity = Math.max(0, Math.sin(time * 0.34 + params.seed * 0.01) - 0.84) / 0.16;
     const wingTwitch = Math.max(0, Math.sin(time * 0.63 + params.seed * 0.03) - 0.94) / 0.06;
-    body.scale.z = baseTransforms.get(body).scale.z * (1 + breath * 0.4);
-    chest.scale.y = baseTransforms.get(chest).scale.y * (1 + breath * 1.2);
-    chest.scale.z = baseTransforms.get(chest).scale.z * (1 + breath * 1.6);
-    head.rotation.z = baseTransforms.get(head).rotation.z + curiosity * 0.16;
-    head.rotation.y = baseTransforms.get(head).rotation.y + Math.sin(time * 0.52) * 0.035 + curiosity * 0.06;
-    leftWing.rotation.z = baseTransforms.get(leftWing).rotation.z - wingTwitch * 0.045;
-    rightWing.rotation.z = baseTransforms.get(rightWing).rotation.z + wingTwitch * 0.045;
-    tail.rotation.z = baseTransforms.get(tail).rotation.z + Math.sin(time * 1.32) * 0.018 + wingTwitch * 0.025;
+    body.scale.z = baseTransforms.get(body).scale.z * (1 + breath);
+    head.rotation.z = baseTransforms.get(head).rotation.z + curiosity * 0.13;
+    head.rotation.y = baseTransforms.get(head).rotation.y + Math.sin(time * 0.52) * 0.025 + curiosity * 0.045;
+    leftWing.rotation.z = baseTransforms.get(leftWing).rotation.z - wingTwitch * 0.035;
+    rightWing.rotation.z = baseTransforms.get(rightWing).rotation.z + wingTwitch * 0.035;
+    tail.rotation.z = baseTransforms.get(tail).rotation.z + Math.sin(time * 1.32) * 0.014 + wingTwitch * 0.018;
     return { enabled: true, tailAngle: tail.rotation.z, leftEarAngle: leftWing.rotation.z, rightEarAngle: rightWing.rotation.z };
   };
   root.userData.setTransientFluff = (amount = 0) => {
-    const scale = 1 + Math.max(0, amount) * 0.028;
+    const scale = 1 + Math.max(0, amount) * 0.022;
     body.scale.x = baseTransforms.get(body).scale.x * scale;
     body.scale.z = baseTransforms.get(body).scale.z * scale;
   };
@@ -431,7 +398,10 @@ export function buildBird(rawParams, quality = 'full') {
   };
   root.userData.prepareDynamicCoatExport = () => () => {};
   root.userData.buildTimings = {
-    meshMs: 0, vertexDataMs: 0, detailsMs: performance.now() - startedAt, totalMs: performance.now() - startedAt,
+    meshMs: performance.now() - startedAt,
+    vertexDataMs: 0,
+    detailsMs: performance.now() - startedAt,
+    totalMs: performance.now() - startedAt,
   };
   root.userData.variant = rng.next();
   return root;
