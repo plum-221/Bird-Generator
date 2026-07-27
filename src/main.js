@@ -17,6 +17,12 @@ import { createRandomBgm } from './bgm.js';
 import { initI18n } from './i18n.js';
 import { createShareCardCapture } from './shareCard.js';
 import { createSpeechBubbleController } from './speechBubbles.js';
+import {
+  classifyBirdInteraction,
+  createBirdExpressionController,
+  createBirdGestureTracker,
+} from './birdPetInteractions.js';
+import { createBirdExpressionOverlay } from './birdExpressionOverlay.js';
 import { createCodexPetPreview } from './codexPetPreview.js';
 import {
   WEATHER_AMOUNT_LIMITS,
@@ -641,6 +647,9 @@ function disposeCat() {
 function rebuild(quality = 'full') {
   const rebuildStartedAt = performance.now();
   speechBubbles.hide();
+  expressionController.reset(petElapsed);
+  expressionOverlay.hide();
+  gestureTracker.cancel();
   syncFloorPaletteToSeed(params.seed);
   resetContainerJiggle();
   disposeCat();
@@ -761,16 +770,36 @@ const speechBubbles = createSpeechBubbleController({
     };
   },
 });
+const expressionController = createBirdExpressionController();
+const gestureTracker = createBirdGestureTracker();
+const expressionOverlay = createBirdExpressionOverlay({
+  element: document.getElementById('bird-expression-overlay'),
+  hintElement: document.getElementById('pet-interaction-hint'),
+  viewport: document.getElementById('viewport'),
+  camera,
+  getBird: () => cat,
+});
+let petElapsed = 0;
+
+function triggerBirdInteraction(event) {
+  if (!event) return;
+  const sample = expressionController.trigger(event.id, petElapsed, event.intensity);
+  const viewportEl = document.getElementById('viewport');
+  viewportEl.dataset.birdInteractionEvent = event.id;
+  viewportEl.dataset.birdInteractionState = sample.state;
+  expressionOverlay.markInteraction();
+  if (sample.eventId === event.id && Math.random() < 0.25) {
+    speechBubbles.showExpression?.(sample.state);
+  }
+}
 window.__speechBubbles = speechBubbles;
 window.addEventListener('meow:speech', (event) => {
   speechBubbles.showNow(event.detail?.role ?? '');
 });
 
-// ---------------------------------------------------------------- 软体抓捏交互
-// 只有三个可交互区（其余部位按了没反应，镜头照常旋转）：
-//   捏脸颊 / 捏屁股：左右扯（限幅），松手弹回
-//   提后颈：整猫被拎起来，松手落回
-// 玩具：抓住拖拽，甩出去摔（刚体物理）
+// ---------------------------------------------------------------- 小鸟抚摸与玩具交互
+// 头、胸、身体、喙和翅膀分别触发表情；身体向上拖动可轻轻托起。
+// 玩具仍可拖拽，靠近或碰到小鸟时会触发好奇/开心反应。
 const raycaster = new THREE.Raycaster();
 const pointerNdc = new THREE.Vector2();
 const eyeGazeTarget = new THREE.Vector2();
@@ -778,7 +807,10 @@ const eyeGazeCurrent = new THREE.Vector2();
 const grab = {
   id: -1,
   pointerId: -1,
-  mode: null,          // 'poke' | 'cheek' | 'butt' | 'lift' | 'toy' | 'container'
+  mode: null,          // 'expression' | 'poke' | 'body-lift' | 'toy' | 'container'
+  zone: null,
+  liftTriggered: false,
+  toyNear: false,
   anchor: new THREE.Vector3(),   // 世界坐标锚点
   planeNormal: new THREE.Vector3(),
   startDrag: new THREE.Vector3(),
@@ -1009,10 +1041,17 @@ document.documentElement.addEventListener('mouseleave', () => eyeGazeTarget.set(
 function pickCat(e) {
   updatePointerNdc(e);
   raycaster.setFromCamera(pointerNdc, camera);
-  const fur = cat?.getObjectByName('fur');
-  if (!fur) return null;
-  const hit = raycaster.intersectObject(fur, false)[0];
-  return hit ? { point: hit.point, dir: raycaster.ray.direction.clone() } : null;
+  if (!cat) return null;
+  const hit = raycaster.intersectObject(cat, true).find(({ object }) => (
+    object.visible
+    && object.isMesh
+    && !object.name.endsWith('Outline')
+  ));
+  return hit ? {
+    point: hit.point,
+    dir: raycaster.ray.direction.clone(),
+    objectName: hit.object.name,
+  } : null;
 }
 
 function pulseCatAtHit(hit, strength = 1) {
@@ -1075,6 +1114,24 @@ function pickContainer(e) {
   return hit ? { object: container, point: hit.point } : null;
 }
 
+function pickInteractive(e) {
+  const candidates = [
+    ['toyHit', pickToy(e)],
+    ['containerHit', pickContainer(e)],
+    ['catHit', pickCat(e)],
+  ].filter(([, hit]) => hit);
+  if (!candidates.length) return { toyHit: null, containerHit: null, catHit: null };
+  candidates.sort(([, a], [, b]) => (
+    camera.position.distanceToSquared(a.point) - camera.position.distanceToSquared(b.point)
+  ));
+  const [kind, hit] = candidates[0];
+  return {
+    toyHit: kind === 'toyHit' ? hit : null,
+    containerHit: kind === 'containerHit' ? hit : null,
+    catHit: kind === 'catHit' ? hit : null,
+  };
+}
+
 // 把鼠标射线投到过锚点、面向相机的平面上（拖拽的世界坐标）
 function dragPointOnPlane(e, out) {
   updatePointerNdc(e);
@@ -1085,18 +1142,15 @@ function dragPointOnPlane(e, out) {
   return out.copy(raycaster.ray.origin).addScaledVector(raycaster.ray.direction, t);
 }
 
-// 命中点在猫身上属于哪个交互区；不在可交互区返回 null
-function grabZone(hitPoint) {
-  const { headC, hr, buttC } = cat.userData;
-  const p = cat.worldToLocal(hitPoint.clone());
-  const dx = p.x - headC.x, dy = p.y - headC.y, dz = p.z - headC.z;
-  // 后颈：头后方偏上
-  if (dz < -hr * 0.2 && dy > -hr * 0.15 && Math.abs(dx) < hr * 0.75) return 'lift';
-  // 脸颊：头前半、两侧、眼睛以下附近
-  if (dz > hr * 0.15 && Math.abs(dx) > hr * 0.22 && dy < hr * 0.35 && dy > -hr * 0.85) return 'cheek';
-  // 屁股：身体后端附近
-  if (buttC && p.distanceTo(buttC) < hr * 1.05 && p.z < buttC.z + hr * 0.55) return 'butt';
-  return null;
+// 按当前参数化模型的锚点判断交互部位，身体缩放后锚点也会同步变化。
+function grabZone(hitPoint, objectName = '') {
+  if (!cat?.userData.getInteractionAnchors) return null;
+  const point = cat.worldToLocal(hitPoint.clone());
+  return classifyBirdInteraction({
+    objectName,
+    point,
+    anchors: cat.userData.getInteractionAnchors(),
+  });
 }
 
 const _drag = new THREE.Vector3();
@@ -1106,6 +1160,7 @@ const TOUCH_TOY_DRAG_THRESHOLD = 10;
 const FISH_GRAB_HOLD_MS = 90;
 const FISH_GRAB_CANCEL_DISTANCE = 12;
 let pendingToyPointer = null;
+let lastToyReactionAt = -Infinity;
 
 function beginInteractiveGrab(e, { toyHit = null, containerHit = null, catHit = null, zone = null }) {
   grab.anchor.copy((toyHit ?? containerHit ?? catHit).point);
@@ -1118,6 +1173,7 @@ function beginInteractiveGrab(e, { toyHit = null, containerHit = null, catHit = 
 
   if (toyHit) {
     grab.mode = 'toy';
+    grab.toyNear = false;
     toyWorld.grabToy(toyHit.toy, toyHit.point);
     return;
   }
@@ -1129,15 +1185,24 @@ function beginInteractiveGrab(e, { toyHit = null, containerHit = null, catHit = 
     viewport.dataset.containerJigglePointer = 'down';
     return;
   }
+  grab.zone = zone;
+  grab.liftTriggered = false;
+  gestureTracker.begin({ zone, x: e.clientX, y: e.clientY, time: petElapsed });
+  if (params.motionDebug) {
+    grab.mode = 'expression';
+    grab.id = -1;
+    return;
+  }
   beginRuaStroke(e, catHit);
-  if (zone === 'poke') {
+  if (zone !== 'body') {
     grab.mode = 'poke';
     grab.id = -1;
     return;
   }
-  grab.mode = zone;
+  grab.mode = 'body-lift';
   grab.id = beginGrab(cat.worldToLocal(catHit.point.clone()));
-  if (zone === 'lift') lift.holding = true;
+  lift.holding = true;
+  lift.target = lift.y;
 }
 
 canvas.addEventListener('pointerdown', (e) => {
@@ -1150,11 +1215,13 @@ canvas.addEventListener('pointerdown', (e) => {
       return;
     }
   }
-  // 玩具优先
-  const toyHit = pickToy(e);
-  const containerHit = toyHit ? null : pickContainer(e);
-  const catHit = toyHit || containerHit ? null : pickCat(e);
-  const zone = catHit ? (grabZone(catHit.point) ?? 'poke') : null;
+  // 同时检测小鸟、玩具和窝，按射线距离选择真正位于最前方的对象。
+  const { toyHit, containerHit, catHit } = pickInteractive(e);
+  const zone = catHit ? (grabZone(catHit.point, catHit.objectName) ?? 'body') : null;
+  if (catHit) {
+    viewport.dataset.birdPickedZone = zone;
+    viewport.dataset.birdPickedObject = catHit.objectName;
+  }
   if (!toyHit && !containerHit && !zone) return; // 落在不可交互区：交给镜头
 
   // 已命中交互物时截断 OrbitControls，避免抓鱼或捏猫被识别成旋转镜头。
@@ -1205,20 +1272,21 @@ canvas.addEventListener('pointermove', (e) => {
   }
   if (grab.mode === null) {
     if (!e.buttons) {
-      const t = pickToy(e);
-      const n = !t && pickContainer(e);
-      const c = !t && !n && pickCat(e);
+      const { toyHit: t, containerHit: n, catHit: c } = pickInteractive(e);
       canvas.style.cursor = t || n || c ? 'grab' : '';
     }
     return;
   }
   if (grab.pointerId >= 0 && e.pointerId !== grab.pointerId) return;
-  if (
-    grab.mode === 'poke'
-    || grab.mode === 'cheek'
-    || grab.mode === 'butt'
-    || grab.mode === 'lift'
-  ) {
+  if (['expression', 'poke', 'body-lift'].includes(grab.mode)) {
+    triggerBirdInteraction(gestureTracker.move({
+      x: e.clientX,
+      y: e.clientY,
+      time: petElapsed,
+    }));
+  }
+  if (grab.mode === 'expression') return;
+  if (grab.mode === 'poke' || grab.mode === 'body-lift') {
     continueRuaStroke(e);
     if (grab.mode === 'poke') return;
   }
@@ -1226,6 +1294,12 @@ canvas.addEventListener('pointermove', (e) => {
 
   if (grab.mode === 'toy') {
     toyWorld.moveGrab(_drag);
+    const birdCenter = cat?.localToWorld(new THREE.Vector3(0, 0.62, 0));
+    grab.toyNear = !!birdCenter && _drag.distanceTo(birdCenter) < 0.78;
+    if (grab.toyNear && petElapsed - lastToyReactionAt > 0.8) {
+      lastToyReactionAt = petElapsed;
+      triggerBirdInteraction({ id: 'toy-near', intensity: 0.9 });
+    }
     return;
   }
   _off.copy(_drag).sub(grab.startDrag);
@@ -1244,25 +1318,23 @@ canvas.addEventListener('pointermove', (e) => {
     viewport.dataset.containerJiggleTargetY = containerJiggle.target.y.toFixed(4);
     return;
   }
-  const hr = cat.userData.hr;
-
-  if (grab.mode === 'cheek' || grab.mode === 'butt') {
-    // 只允许横向为主的拉扯；限幅防止扯得夸张
-    _off.z *= grab.mode === 'butt' ? 0.4 : 0.25;
-    _off.y *= 0.55;
-    const maxStretch = hr * 0.5;
-    if (_off.length() > maxStretch) _off.setLength(maxStretch);
-    setGrabTarget(grab.id, _off);
-  } else if (grab.mode === 'lift') {
-    // 只取向上分量提起整猫；皮肤在后颈处再多提一点（被拎住的褶皱感）
+  if (grab.mode === 'body-lift') {
+    // 从身体下方托起，避免旧版“提后颈”的猫咪交互语义。
     lift.target = THREE.MathUtils.clamp(_off.y, 0, 0.55);
     setGrabTarget(grab.id, _off.set(0, lift.target * 0.22, 0));
+    if (!grab.liftTriggered && lift.target > 0.08) {
+      grab.liftTriggered = true;
+      triggerBirdInteraction({ id: 'body-lift', intensity: 1.1 });
+    }
   }
 }, { capture: true });
 
 function releaseGrab() {
   if (grab.mode === null) return;
-  if (grab.mode === 'toy') toyWorld.releaseGrab();
+  if (grab.mode === 'toy') {
+    toyWorld.releaseGrab();
+    if (grab.toyNear) triggerBirdInteraction({ id: 'toy-hit', intensity: 1 });
+  }
   if (grab.mode === 'container') {
     containerJiggle.holding = false;
     viewport.dataset.containerJigglePointer = 'released';
@@ -1271,6 +1343,10 @@ function releaseGrab() {
   grab.id = -1;
   grab.pointerId = -1;
   grab.mode = null;
+  grab.zone = null;
+  grab.toyNear = false;
+  grab.liftTriggered = false;
+  gestureTracker.cancel();
   lift.holding = false;
   controls.enabled = true;
   canvas.style.cursor = '';
@@ -1280,6 +1356,15 @@ function finishCanvasPointer(e) {
   if (e.pointerType === 'touch') activeCanvasTouches.delete(e.pointerId);
   if (pendingToyPointer?.pointerId === e.pointerId) pendingToyPointer = null;
   if (grab.pointerId === e.pointerId || (e.pointerType !== 'touch' && grab.mode !== null)) {
+    if (['expression', 'poke', 'body-lift'].includes(grab.mode) && !grab.liftTriggered) {
+      triggerBirdInteraction(gestureTracker.end({
+        x: e.clientX,
+        y: e.clientY,
+        time: petElapsed,
+      }));
+    } else {
+      gestureTracker.cancel();
+    }
     releaseGrab();
   }
 }
@@ -1454,6 +1539,7 @@ const clock = new THREE.Clock();
 const staticIdleViewport = document.getElementById('viewport');
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 1 / 30);
+  petElapsed += dt;
   stepSim(dt);
   updateWeather(dt);
   const staticIdleSample = cat?.userData.updateStaticIdle?.(
@@ -1476,6 +1562,9 @@ renderer.setAnimationLoop(() => {
     eyeGazeCurrent.x,
     eyeGazeCurrent.y
   );
+  const expressionSample = expressionController.update(petElapsed);
+  cat?.userData.applyExpression?.(expressionSample, dt, !params.motionDebug);
+  expressionOverlay.update(expressionSample);
   controls.update();
   toyWorld.updateFishPupils(camera);
   speechBubbles.update(dt);
@@ -3023,6 +3112,30 @@ window.__resetMotionWorld = () => {
 };
 window.__hatch = hatchUniforms;
 window.__zone = (x, y, z) => grabZone(new THREE.Vector3(x, y, z));
+window.__birdInteractionAnchors = () => {
+  const rect = canvas.getBoundingClientRect();
+  const anchors = cat?.userData.getInteractionAnchors?.() ?? {};
+  return Object.fromEntries(Object.entries(anchors).map(([name, anchor]) => {
+    const projected = cat.localToWorld(new THREE.Vector3(anchor.x, anchor.y, anchor.z)).project(camera);
+    return [name, {
+      x: rect.left + (projected.x * 0.5 + 0.5) * rect.width,
+      y: rect.top + (-projected.y * 0.5 + 0.5) * rect.height,
+      r: anchor.r,
+    }];
+  }));
+};
+window.__pickBirdAt = (x, y) => {
+  const hit = pickCat({ clientX: x, clientY: y });
+  return hit ? {
+    object: hit.objectName,
+    zone: grabZone(hit.point, hit.objectName),
+    point: cat.worldToLocal(hit.point.clone()).toArray(),
+  } : null;
+};
+window.__triggerBirdInteraction = (id, intensity = 1) => {
+  triggerBirdInteraction({ id, intensity });
+  return expressionController.state;
+};
 // 手动推进模拟（隐藏标签页里 rAF 不跑，自动化验证用）
 window.__step = (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) stepSim(dt); };
 window.__pokeState = () => pokeUniforms.uPokeOff.value.map((v) => +v.length().toFixed(4));

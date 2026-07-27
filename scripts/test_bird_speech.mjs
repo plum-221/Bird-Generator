@@ -9,6 +9,10 @@ const forbidden = {
 
 for (const [locale, copy] of Object.entries(SPEECH_BUBBLE_COPY)) {
   assert.ok(Array.isArray(copy.bird) && copy.bird.length >= 10, `${locale} must define bird dialogue`);
+  assert.equal(Object.keys(copy.expressions ?? {}).length, 10, `${locale} must define all expression dialogue`);
+  for (const [state, lines] of Object.entries(copy.expressions)) {
+    assert.ok(Array.isArray(lines) && lines.length >= 2, `${locale}.${state} needs varied dialogue`);
+  }
   assert.equal(copy.cat, undefined, `${locale} must not retain cat dialogue`);
   const serialized = JSON.stringify(copy);
   for (const pattern of forbidden[locale]) {

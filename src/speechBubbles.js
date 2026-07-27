@@ -16,6 +16,18 @@ const COPY = {
       '这个小球会自己跑吗？',
       '啾啾，今天心情很好。',
     ],
+    expressions: {
+      happy: ['啾！这个好玩。', '再来一下也可以。'],
+      love: ['最喜欢你摸摸头。', '再靠近一点也可以。'],
+      shy: ['胸前羽毛会乱啦。', '轻一点点……'],
+      curious: ['这个是什么呀？', '让我仔细看看。'],
+      surprised: ['啾？碰到嘴巴啦！', '诶，我没准备好。'],
+      startled: ['等等，我还没站稳！', '要轻轻托住我。'],
+      angry: ['不许一直逗我。', '再闹我要啄你啦。'],
+      sad: ['翅膀要轻轻碰。', '那里有一点敏感。'],
+      sleepy: ['让我眯一小会儿。', '啾……晚安。'],
+      proud: ['看，我站得很神气。', '今天的羽毛很漂亮吧。'],
+    },
     fish: [
       '我是会滚动的小伙伴。',
       '小鸟刚才在看我。',
@@ -68,6 +80,18 @@ const COPY = {
       'このボール、自分で動くの？',
       'ピヨピヨ、今日はごきげん。',
     ],
+    expressions: {
+      happy: ['ピッ！楽しいね。', 'もう一回でもいいよ。'],
+      love: ['頭をなでてもらうの、大好き。', 'もう少し近くに来て。'],
+      shy: ['胸の羽が乱れちゃう。', 'もう少しそっと……'],
+      curious: ['これは何だろう？', 'よく見せて。'],
+      surprised: ['ピッ？くちばしに触った！', 'えっ、びっくりした。'],
+      startled: ['待って、まだ立ててない！', 'そっと支えてね。'],
+      angry: ['ずっとからかわないで。', 'つついちゃうよ。'],
+      sad: ['翼はそっと触ってね。', 'そこは少し敏感なの。'],
+      sleepy: ['少しだけ寝かせて。', 'ピヨ……おやすみ。'],
+      proud: ['ほら、かっこよく立てた。', '今日の羽、きれいでしょ。'],
+    },
     fish: [
       'ころころ転がる仲間です。',
       '小鳥がこっちを見ていたよ。',
@@ -120,6 +144,18 @@ const COPY = {
       'Does this little ball move by itself?',
       'Chirp chirp. I feel happy today.',
     ],
+    expressions: {
+      happy: ['Chirp! That was fun.', 'You can do that again.'],
+      love: ['Head scratches are my favorite.', 'Come a little closer.'],
+      shy: ['You will ruffle my chest feathers.', 'A little gentler, please.'],
+      curious: ['What is that?', 'Let me look closer.'],
+      surprised: ['Chirp? You touched my beak!', 'Oh! I was not ready.'],
+      startled: ['Wait, I am not steady!', 'Hold me gently.'],
+      angry: ['Stop teasing me.', 'I might peck you.'],
+      sad: ['Please be gentle with my wing.', 'That spot is sensitive.'],
+      sleepy: ['Let me nap for a moment.', 'Chirp... good night.'],
+      proud: ['Look how proudly I stand.', 'My feathers look lovely today.'],
+    },
     fish: [
       'I am the rolling little friend.',
       'The little bird was watching me.',
@@ -281,17 +317,8 @@ export function createSpeechBubbleController({
     return true;
   }
 
-  function showNow(preferredRole = '') {
-    const actors = availableActors();
-    if (!actors.size) return false;
-    const roles = new Set(actors.keys());
-    const normalizedRole = preferredRole === 'cat' ? 'bird' : preferredRole;
-    const role = roles.has(normalizedRole) ? normalizedRole : weightedRole(roles);
-    const roleActors = actors.get(role);
-    const actor = pickRandom(roleActors);
-    const text = messageFor(role);
+  function showText(role, actor, text) {
     if (!actor || !text) return false;
-
     active = { role, actor };
     lastText = text;
     element.textContent = text;
@@ -303,6 +330,24 @@ export function createSpeechBubbleController({
     activeUntil = elapsed + THREE.MathUtils.clamp(2.8 + text.length * 0.065, 3.15, 4.5);
     setDiagnostics(true, role, text);
     return true;
+  }
+
+  function showNow(preferredRole = '') {
+    const actors = availableActors();
+    if (!actors.size) return false;
+    const roles = new Set(actors.keys());
+    const normalizedRole = preferredRole === 'cat' ? 'bird' : preferredRole;
+    const role = roles.has(normalizedRole) ? normalizedRole : weightedRole(roles);
+    const roleActors = actors.get(role);
+    const actor = pickRandom(roleActors);
+    const text = messageFor(role);
+    return showText(role, actor, text);
+  }
+
+  function showExpression(state) {
+    const bird = getCat();
+    const lines = localizedCopy(getLocale()).expressions?.[state] ?? [];
+    return showText('bird', bird, pickRandom(lines, lastText));
   }
 
   function hide() {
@@ -338,6 +383,7 @@ export function createSpeechBubbleController({
   return {
     update,
     showNow,
+    showExpression,
     hide,
     refreshLocale,
     get activeRole() { return active?.role ?? ''; },

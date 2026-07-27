@@ -33,6 +33,24 @@ for (const name of foreheadMarks) {
 assert.ok(!bird.getObjectByName('leftCheek'), 'left cheek geometry must be removed');
 assert.ok(!bird.getObjectByName('rightCheek'), 'right cheek geometry must be removed');
 assert.equal([...names].filter((name) => name.includes('ThroatDot')).length, 0, 'decorative throat dots must be removed');
+assert.equal(typeof bird.userData.getInteractionAnchors, 'function', 'bird must expose anatomical interaction anchors');
+assert.equal(typeof bird.userData.applyExpression, 'function', 'bird must expose an additive expression interface');
+const interactionAnchors = bird.userData.getInteractionAnchors();
+for (const key of ['head', 'chest', 'beak', 'leftWing', 'rightWing', 'body']) {
+  assert.ok(interactionAnchors[key]?.r > 0, `missing interaction anchor ${key}`);
+}
+const expressionHead = bird.getObjectByName('head');
+const expressionWing = bird.getObjectByName('leftWing');
+const baseHeadTilt = expressionHead.rotation.z;
+const baseWingTilt = expressionWing.rotation.z;
+bird.userData.updateEyeAnimation(0, 0, 0);
+bird.userData.applyExpression({ state: 'love', intensity: 1, expression: {
+  eyeX: 1.03, eyeY: 0.58, headTilt: 0.13, headPitch: 0.02,
+  wingLift: 0.14, bodyBob: 0.012, fluff: 0.14,
+} }, 0.5);
+assert.ok(expressionHead.rotation.z > baseHeadTilt + 0.08, 'love expression must visibly tilt the head');
+assert.ok(expressionWing.rotation.z < baseWingTilt - 0.08, 'love expression must lift the folded wing');
+assert.ok(leftEyeGroup.userData.gaze.scale.y < 0.75, 'love expression must soften the eyes through EyeGaze');
 assert.ok(bird.userData.visualProfile, 'bird must publish visual profile metadata');
 assert.equal(bird.userData.visualProfile.species, 'budgerigar');
 assert.equal(bird.userData.visualProfile.modelVersion, 'sdf-v3');

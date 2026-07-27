@@ -35,6 +35,10 @@ const COPY = {
   '羽毛': { 'ja-JP': '羽毛', en: 'Feathers' },
   '蓬松羽毛': { 'ja-JP': 'ふわふわの羽', en: 'Fluffy feathers' },
   '摸摸小鸟': { 'ja-JP': '小鳥をなでる', en: 'Pet the bird' },
+  '摸摸头、挠挠胸，或把玩具递给它': {
+    'ja-JP': '頭や胸をなでたり、玩具を近づけてみよう',
+    en: 'Pet its head or chest, or bring it a toy',
+  },
   '🪶 导出给 Codex': { 'ja-JP': '🪶 Codex 用に書き出す', en: '🪶 Export for Codex' },
   '当前小鸟': { 'ja-JP': '現在の小鳥', en: 'Current bird' },
   '这里会准备当前小鸟的参数 JSON 和参考图 PNG。下载后，把两个文件一起发送给 Codex。': {

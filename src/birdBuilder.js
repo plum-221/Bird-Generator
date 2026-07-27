@@ -407,6 +407,22 @@ export function buildBird(rawParams, quality = 'full') {
     }
     root.userData.animationRootLift = 0;
   };
+  const interactionAnchor = (point, radius) => ({
+    x: point.x, y: point.y, z: point.z, r: radius,
+  });
+  const interactionAnchors = {
+    head: interactionAnchor(headC, headRadius * 1.16),
+    chest: interactionAnchor(V(0, 0.72 + anatomy.bodyLift, 0.13), 0.29 * anatomy.width),
+    beak: interactionAnchor(V(0, headC.y - headRadius * 0.22, headC.z + headRadius), headRadius * 0.22),
+    leftWing: interactionAnchor(attachments.leftWingRoot, 0.24 * anatomy.wingScale),
+    rightWing: interactionAnchor(attachments.rightWingRoot, 0.24 * anatomy.wingScale),
+    body: interactionAnchor(V(0, 0.48 + anatomy.bodyLift, 0), 0.39 * anatomy.width),
+  };
+  const expressionCurrent = {
+    eyeX: 1, eyeY: 1, headTilt: 0, headPitch: 0,
+    wingLift: 0, bodyBob: 0, fluff: 0,
+  };
+  const expressionKeys = Object.keys(expressionCurrent);
 
   root.userData.headC = headC.clone();
   root.userData.hr = headRadius;
@@ -423,6 +439,40 @@ export function buildBird(rawParams, quality = 'full') {
   };
   root.userData.birdParts = { body, chest, head, face, leftWing, rightWing, tail, feet, eyeGroups };
   root.userData.resetBirdParts = resetParts;
+  root.userData.getInteractionAnchors = () => Object.fromEntries(
+    Object.entries(interactionAnchors).map(([key, anchor]) => [key, { ...anchor }])
+  );
+  root.userData.applyExpression = (sample = {}, dt = 1 / 60, modelEnabled = true) => {
+    const expression = modelEnabled ? sample.expression : null;
+    const intensity = modelEnabled ? Math.max(0, sample.intensity ?? 0) : 0;
+    const factor = 1 - Math.exp(-Math.min(Math.max(dt, 0), 0.1) * 15);
+    for (const key of expressionKeys) {
+      const neutral = key === 'eyeX' || key === 'eyeY' ? 1 : 0;
+      const target = expression ? neutral + ((expression[key] ?? neutral) - neutral) * intensity : neutral;
+      expressionCurrent[key] += (target - expressionCurrent[key]) * factor;
+    }
+    head.rotation.x = baseTransforms.get(head).rotation.x + expressionCurrent.headPitch;
+    head.rotation.z += expressionCurrent.headTilt;
+    leftWing.rotation.z -= expressionCurrent.wingLift;
+    rightWing.rotation.z += expressionCurrent.wingLift;
+    body.position.y = baseTransforms.get(body).position.y + expressionCurrent.bodyBob;
+    body.scale.x = baseTransforms.get(body).scale.x * (1 + expressionCurrent.fluff * 0.035);
+    body.scale.z *= 1 + expressionCurrent.fluff * 0.026;
+    for (const eye of eyeGroups) {
+      const gaze = eye.userData.gaze;
+      gaze.scale.x = expressionCurrent.eyeX;
+      gaze.scale.y *= expressionCurrent.eyeY;
+    }
+    root.userData.expressionState = sample.state ?? 'neutral';
+    return { state: root.userData.expressionState, ...expressionCurrent };
+  };
+  root.userData.clearExpression = () => {
+    Object.assign(expressionCurrent, {
+      eyeX: 1, eyeY: 1, headTilt: 0, headPitch: 0,
+      wingLift: 0, bodyBob: 0, fluff: 0,
+    });
+    root.userData.expressionState = 'neutral';
+  };
   root.userData.updateEyeAnimation = (time, gazeX = 0, gazeY = 0) => {
     const blink = Math.sin(time * 0.81 + params.seed * 0.13) > 0.982 ? 0.10 : 1;
     for (const eye of eyeGroups) {
