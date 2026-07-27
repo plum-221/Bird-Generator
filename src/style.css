@@ -437,6 +437,7 @@ select {
 .bird-expression-overlay[data-symbol="sleep"] { --expression-color: #8176a9; }
 .bird-expression-overlay[data-symbol="note"] { --expression-color: #649874; }
 .bird-expression-overlay[data-symbol="blush"] { --expression-color: #e8898c; }
+.bird-expression-overlay[data-symbol="heart"] .glyph-2 { left: 32px; bottom: -4px; }
 .bird-expression-overlay[data-symbol="blush"] .glyph-1 { left: 2px; right: auto; top: 31px; }
 .bird-expression-overlay[data-symbol="blush"] .glyph-2 { left: auto; right: 2px; bottom: 12px; font-size: 38px; }
 
