@@ -42,4 +42,20 @@ const bounds = new Box3()
 const size = bounds.getSize(new Vector3());
 assert.ok(size.y > size.x * 1.15, `standing torso must be vertical, got ${size.x.toFixed(2)}×${size.y.toFixed(2)}`);
 
+const positions = bird.getObjectByName('body').geometry.attributes.position;
+const widthInBand = (minY, maxY) => {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (let index = 0; index < positions.count; index++) {
+    const y = positions.getY(index);
+    if (y < minY || y >= maxY) continue;
+    minX = Math.min(minX, positions.getX(index));
+    maxX = Math.max(maxX, positions.getX(index));
+  }
+  return maxX - minX;
+};
+const shoulderWidth = widthInBand(0.72, 0.86);
+const lowerChestWidth = widthInBand(0.58, 0.72);
+assert.ok(shoulderWidth <= lowerChestWidth * 1.02, `shoulder contour must taper smoothly, got ${shoulderWidth.toFixed(3)} vs ${lowerChestWidth.toFixed(3)}`);
+
 console.log({ status: 'ok', parts: names.size, silhouette: [size.x, size.y, size.z].map((v) => Number(v.toFixed(3))) });

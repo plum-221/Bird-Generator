@@ -219,7 +219,7 @@ function addFace(headRig, headRadius, params, materials) {
   return { face, eyeGroups };
 }
 
-function createBodyPrimitives(params, headC, headRadius, attachments) {
+function createBodyPrimitives(params, headC, headRadius) {
   const fluff = params.fluffy ? params.furFluff : 0.3;
   const width = 0.94 + (params.chubbiness - 1) * 0.16 + fluff * 0.014;
   const prims = [];
@@ -229,8 +229,6 @@ function createBodyPrimitives(params, headC, headRadius, attachments) {
   P(sphere({ c: V(0, 0.86, 0.02), r: 0.25, s: [0.90 * width, 0.96, 0.78 * width], k: 0.16, tag: 'neck' }));
   P(sphere({ c: headC, r: headRadius, s: [1, 1.06, 0.93], k: 0.18, tag: 'head' }));
   P(sphere({ c: V(0, headC.y + headRadius * 0.62, headC.z - 0.01), r: headRadius * 0.58, s: [1.18, 0.78, 1], k: 0.13, tag: 'crown' }));
-  P(sphere({ c: attachments.leftWingRoot, r: 0.14, s: [1, 0.88, 0.82], k: 0.14, tag: 'shoulder' }));
-  P(sphere({ c: attachments.rightWingRoot, r: 0.14, s: [1, 0.88, 0.82], k: 0.14, tag: 'shoulder' }));
   return prims;
 }
 
@@ -262,7 +260,7 @@ export function buildBird(rawParams, quality = 'full') {
     eyeLeft: toon(eyeLeftColor), eyeRight: toon(eyeRightColor), throatDot: toon(plumage.throatDot || '#8e8985'),
   };
 
-  const prims = createBodyPrimitives(params, headC, headRadius, attachments);
+  const prims = createBodyPrimitives(params, headC, headRadius);
   const cellSize = quality === 'draft' ? 0.064 : 0.042;
   const bodyGeometry = meshFromSDF(prims, cellSize, -0.12);
   bodyGeometry.userData.meshCellSize = cellSize;
