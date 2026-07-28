@@ -7,6 +7,7 @@ import {
   OUTDOOR_TREES,
   createOutdoorTerrainHeightfield,
   outdoorCropStage,
+  outdoorNpcColliders,
   sampleOutdoorTerrainHeightfield,
 } from './outdoorWalkModel.js';
 
@@ -158,15 +159,15 @@ function grassTuftGeometry() {
   const positions = [];
   const indices = [];
   const blades = [
-    { angle: 0.05, x: 0, z: 0, height: 0.48, width: 0.034, bend: 0.13 },
-    { angle: 0.72, x: 0.06, z: -0.03, height: 0.39, width: 0.03, bend: -0.11 },
-    { angle: 1.38, x: 0.08, z: 0.04, height: 0.55, width: 0.032, bend: 0.15 },
-    { angle: 2.04, x: -0.04, z: 0.06, height: 0.43, width: 0.03, bend: -0.1 },
-    { angle: 2.7, x: -0.08, z: 0.02, height: 0.51, width: 0.034, bend: 0.12 },
-    { angle: 3.36, x: -0.05, z: -0.06, height: 0.37, width: 0.028, bend: -0.08 },
-    { angle: 4.02, x: 0.02, z: -0.08, height: 0.47, width: 0.032, bend: 0.1 },
-    { angle: 4.68, x: 0.08, z: -0.02, height: 0.42, width: 0.03, bend: -0.12 },
-    { angle: 5.34, x: 0.03, z: 0.05, height: 0.52, width: 0.034, bend: 0.14 },
+    { angle: 0.05, x: 0, z: 0, height: 0.34, width: 0.012, bend: 0.13 },
+    { angle: 0.72, x: 0.06, z: -0.03, height: 0.28, width: 0.011, bend: -0.11 },
+    { angle: 1.38, x: 0.08, z: 0.04, height: 0.4, width: 0.012, bend: 0.15 },
+    { angle: 2.04, x: -0.04, z: 0.06, height: 0.31, width: 0.011, bend: -0.1 },
+    { angle: 2.7, x: -0.08, z: 0.02, height: 0.37, width: 0.012, bend: 0.12 },
+    { angle: 3.36, x: -0.05, z: -0.06, height: 0.26, width: 0.01, bend: -0.08 },
+    { angle: 4.02, x: 0.02, z: -0.08, height: 0.34, width: 0.011, bend: 0.1 },
+    { angle: 4.68, x: 0.08, z: -0.02, height: 0.3, width: 0.011, bend: -0.12 },
+    { angle: 5.34, x: 0.03, z: 0.05, height: 0.38, width: 0.012, bend: 0.14 },
   ];
   for (const blade of blades) {
     const base = positions.length / 3;
@@ -177,7 +178,7 @@ function grassTuftGeometry() {
     for (let segment = 0; segment <= 4; segment += 1) {
       const t = segment / 4;
       const curve = blade.bend * t * t;
-      const width = blade.width * (1 - t * 0.72) + 0.008;
+      const width = blade.width * (1 - t * 0.82) + 0.0015;
       const centerX = blade.x + bendX * curve;
       const centerZ = blade.z + bendZ * curve;
       positions.push(centerX - rightX * width, blade.height * t, centerZ - rightZ * width);
@@ -226,29 +227,7 @@ function addGrass(group) {
 }
 
 function addTrees(group) {
-  const trunkGeometry = new THREE.CylinderGeometry(0.24, 0.42, 2.5, 7);
-  const crownGeometry = new THREE.DodecahedronGeometry(1.45, 0);
-  const trunks = new THREE.InstancedMesh(trunkGeometry, toon('#8d6847'), OUTDOOR_TREES.length);
-  const crowns = new THREE.InstancedMesh(crownGeometry, toon('#789d5c'), OUTDOOR_TREES.length);
   const transform = new THREE.Object3D();
-  for (let i = 0; i < OUTDOOR_TREES.length; i += 1) {
-    const tree = OUTDOOR_TREES[i];
-    const groundY = terrainGroundHeight(tree.x, tree.z);
-    transform.position.set(tree.x, groundY + 1.25 * tree.scale, tree.z);
-    transform.rotation.y = (i * 2.17) % Math.PI;
-    transform.scale.setScalar(tree.scale);
-    transform.updateMatrix();
-    trunks.setMatrixAt(i, transform.matrix);
-    transform.position.y = groundY + 3.35 * tree.scale;
-    transform.scale.set(tree.scale * 1.28, tree.scale * 1.02, tree.scale * 1.16);
-    transform.updateMatrix();
-    crowns.setMatrixAt(i, transform.matrix);
-  }
-  trunks.castShadow = true;
-  trunks.receiveShadow = true;
-  crowns.castShadow = true;
-  group.add(trunks, crowns);
-
   new THREE.TextureLoader().load(treeAtlasUrl, (atlas) => {
     atlas.colorSpace = THREE.SRGBColorSpace;
     atlas.wrapS = THREE.RepeatWrapping;
@@ -274,6 +253,24 @@ function addTrees(group) {
       }
     }
   });
+}
+
+function createSkyTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024; canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#72b9e6');
+  gradient.addColorStop(0.58, '#b9def0');
+  gradient.addColorStop(1, '#d9edcf');
+  ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(255,255,255,0.48)';
+  for (const cloud of [[160, 130, 92], [510, 92, 125], [820, 158, 105]]) {
+    ctx.beginPath(); ctx.ellipse(cloud[0], cloud[1], cloud[2], 22, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function createGarden(group) {
@@ -415,16 +412,9 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
   const garden = createGarden(group);
   const house = createHouse(group);
 
-  const panoramaMaterial = new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: '#e8f2dd' });
+  const panoramaMaterial = new THREE.MeshBasicMaterial({ side: THREE.BackSide, map: createSkyTexture() });
   const panorama = new THREE.Mesh(new THREE.CylinderGeometry(94, 94, 52, 48, 1, true), panoramaMaterial);
   panorama.position.y = 22;
-  new THREE.TextureLoader().load(backgroundUrl, (texture) => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.repeat.x = 2;
-    panoramaMaterial.map = texture;
-    panoramaMaterial.needsUpdate = true;
-  });
   group.add(panorama);
 
   const player = buildBird({ ...params, pose: 'standing', motionDebug: false, seed: Number(params.seed) || 2210728 }, 'draft');
@@ -440,6 +430,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
   const gaitParts = [leftLeg, rightLeg, leftFoot, rightFoot].filter(Boolean).map((part) => ({ part, rotation: part.rotation.clone() }));
 
   const npcById = new Map();
+  const npcWander = new Map();
   const independentModels = [];
   for (let index = 0; index < OUTDOOR_NPCS.length; index += 1) {
     const npc = OUTDOOR_NPCS[index];
@@ -456,6 +447,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
     model.scale.setScalar((npc.scale ?? 0.72) * (index >= 8 ? 0.9 + index * 0.018 : 1));
     model.userData.outdoorNpcId = npc.id;
     model.userData.baseY = model.position.y;
+    npcWander.set(npc.id, { homeX: npc.x, homeZ: npc.z, phase: index * 1.37, targetX: npc.x, targetZ: npc.z, wait: 0.8 + index * 0.2 });
     model.traverse((object) => { if (object.isMesh) object.castShadow = false; });
     group.add(model);
     npcById.set(npc.id, model);
@@ -493,11 +485,26 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
       for (let i = 0; i < OUTDOOR_NPCS.length; i += 1) {
         const npc = OUTDOOR_NPCS[i];
         const model = npcById.get(npc.id);
-        model.position.y = model.userData.baseY + Math.sin(elapsed * 1.7 + i * 0.9) * 0.035;
-        const desired = Math.atan2(playerPosition.x - npc.x, playerPosition.z - npc.z);
-        if (Math.hypot(playerPosition.x - npc.x, playerPosition.z - npc.z) < 5) {
-          model.rotation.y += Math.atan2(Math.sin(desired - model.rotation.y), Math.cos(desired - model.rotation.y)) * Math.min(1, dt * 3);
+        const wander = npcWander.get(npc.id);
+        wander.wait -= dt;
+        if (wander.wait <= 0) {
+          const angle = wander.phase + elapsed * 0.17;
+          const radius = 1.6 + (i % 3) * 0.7;
+          wander.targetX = wander.homeX + Math.cos(angle) * radius;
+          wander.targetZ = wander.homeZ + Math.sin(angle) * radius;
+          wander.wait = 2.2 + (i % 4) * 0.7;
         }
+        const dx = wander.targetX - model.position.x;
+        const dz = wander.targetZ - model.position.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance > 0.06) {
+          const step = Math.min(distance, dt * 0.62);
+          model.position.x += dx / distance * step;
+          model.position.z += dz / distance * step;
+          const desired = Math.atan2(dx, dz);
+          model.rotation.y += Math.atan2(Math.sin(desired - model.rotation.y), Math.cos(desired - model.rotation.y)) * Math.min(1, dt * 5);
+        }
+        model.position.y = terrainGroundHeight(model.position.x, model.position.z) + Math.sin(elapsed * 1.7 + i * 0.9) * 0.035;
       }
     },
     triggerEmote() {
@@ -533,6 +540,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
       outdoorToy.visible = true;
     },
     getNpcObject(id) { return npcById.get(id) ?? null; },
+    getNpcColliders() { return [...npcById.values()].map((model) => ({ x: model.position.x, z: model.position.z, radius: 0.58 * (model.scale.x || 0.72) })); },
     getNpcCount() { return npcById.size; },
     getIndependentNpcCount() { return 8; },
     getGroundHeight(x, z) { return terrainGroundHeight(x, z); },

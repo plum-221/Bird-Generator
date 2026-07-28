@@ -22,6 +22,7 @@ import {
   OUTDOOR_NPCS,
   OUTDOOR_TALK_EXIT_DISTANCE,
   OUTDOOR_TREES,
+  outdoorGardenColliders,
   advanceOutdoorBuild,
   createOutdoorFarmState,
   findNearbyOutdoorNpc,
@@ -1471,8 +1472,8 @@ function stepSim(dt) {
     const next = stepOutdoorCharacter(outdoorPlayer, outdoorControls.getInput(), dt, {
       cameraHeading,
       jump: outdoorJumpQueued,
-      circles: OUTDOOR_TREES,
-      boxes: outdoorHouseColliders(outdoorBuild.stage),
+      circles: [...OUTDOOR_TREES, ...(outdoorWorld?.getNpcColliders?.() ?? [])],
+      boxes: [...outdoorGardenColliders(), ...outdoorHouseColliders(outdoorBuild.stage)],
       groundHeight: outdoorWorld?.getGroundHeight,
     });
     outdoorJumpQueued = false;

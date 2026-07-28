@@ -137,6 +137,20 @@ export function outdoorHouseColliders(stage = 0) {
   ];
 }
 
+export function outdoorGardenColliders() {
+  const { x, z } = OUTDOOR_GARDEN_CENTER;
+  return [
+    { type: 'box', x: x - 1.025, z: z - 1.225, halfX: 0.85, halfZ: 1.05 },
+    { type: 'box', x: x + 1.025, z: z - 1.225, halfX: 0.85, halfZ: 1.05 },
+    { type: 'box', x: x - 1.025, z: z + 1.225, halfX: 0.85, halfZ: 1.05 },
+    { type: 'box', x: x + 1.025, z: z + 1.225, halfX: 0.85, halfZ: 1.05 },
+  ];
+}
+
+export function outdoorNpcColliders(npcs = OUTDOOR_NPCS) {
+  return npcs.map((npc) => ({ x: npc.x, z: npc.z, radius: 0.58 * (npc.scale ?? 0.72) }));
+}
+
 export function resolveOutdoorCollisions(position, {
   playerRadius = OUTDOOR_PLAYER_RADIUS,
   circles = OUTDOOR_TREES,
