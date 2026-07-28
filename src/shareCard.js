@@ -719,6 +719,11 @@ export function createShareCardCapture({
     }, 180);
   }
 
+  function openAndCapture() {
+    open();
+    requestAnimationFrame(() => { capture(); });
+  }
+
   async function capture() {
     if (!active) return;
     captureButton.disabled = true;
@@ -802,6 +807,7 @@ export function createShareCardCapture({
 
   return {
     open,
+    openAndCapture,
     close,
     capture,
     get active() { return active; },
