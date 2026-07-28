@@ -12,7 +12,6 @@ import {
 } from './outdoorWalkModel.js';
 
 const backgroundUrl = new URL('./assets/outdoor/distant-meadow-v1.webp', import.meta.url).href;
-const treeAtlasUrl = new URL('./assets/outdoor/storybook-tree-atlas-v1.webp', import.meta.url).href;
 const materialAtlasUrl = new URL('./assets/outdoor/storybook-material-atlas-v1.webp', import.meta.url).href;
 const ink = '#604d3c';
 const terrainHeightfield = createOutdoorTerrainHeightfield();
@@ -227,32 +226,22 @@ function addGrass(group) {
 }
 
 function addTrees(group) {
-  const transform = new THREE.Object3D();
-  new THREE.TextureLoader().load(treeAtlasUrl, (atlas) => {
-    atlas.colorSpace = THREE.SRGBColorSpace;
-    atlas.wrapS = THREE.RepeatWrapping;
-    atlas.wrapT = THREE.ClampToEdgeWrapping;
-    for (let variant = 0; variant < 3; variant += 1) {
-      const texture = atlas.clone();
-      texture.repeat.set(1 / 3, 1);
-      texture.offset.set(variant / 3, 0);
-      texture.needsUpdate = true;
-      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, alphaTest: 0.16, side: THREE.DoubleSide, depthWrite: true });
-      const trees = OUTDOOR_TREES.filter((tree) => tree.variant === variant);
-      for (const rotationY of [0, Math.PI / 2]) {
-        const sprites = new THREE.InstancedMesh(new THREE.PlaneGeometry(4.7, 6.2), material, trees.length);
-        trees.forEach((tree, index) => {
-          transform.position.set(tree.x, terrainGroundHeight(tree.x, tree.z) + 3.05 * tree.scale, tree.z);
-          transform.rotation.set(0, rotationY, 0);
-          transform.scale.setScalar(tree.scale);
-          transform.updateMatrix();
-          sprites.setMatrixAt(index, transform.matrix);
-        });
-        sprites.castShadow = true;
-        group.add(sprites);
-      }
-    }
-  });
+  for (const tree of OUTDOOR_TREES) {
+    const model = new THREE.Group();
+    model.name = `outdoorTree-${tree.id}`;
+    const groundY = terrainGroundHeight(tree.x, tree.z);
+    model.position.set(tree.x, groundY, tree.z);
+    model.rotation.y = (tree.variant * 1.7) % Math.PI;
+    model.scale.setScalar(tree.scale);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.48, 3.4, 9), atlasToon('#8f6b45', '1-0', 1.1));
+    trunk.position.y = 1.7;
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.15, 2), toon(tree.variant === 1 ? '#789d5c' : tree.variant === 2 ? '#90aa61' : '#6f9458'));
+    crown.position.y = 3.85;
+    crown.scale.set(1.12, 0.82, 1.04);
+    trunk.castShadow = true; crown.castShadow = true;
+    model.add(trunk, crown);
+    group.add(model);
+  }
 }
 
 function createSkyTexture() {
@@ -394,8 +383,8 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
 
   const mainPath = ribbon(sampledCurve([
     [0, 10], [-11, 4], [-17, -12], [-3, -27], [17, -22], [29, -5], [20, 15], [5, 24], [-14, 19], [-25, 7], [-17, -12],
-  ], 120), 3.5, '#f0d4a3');
-  const stream = ribbon(sampledCurve([[-49, -18], [-27, -12], [-10, -15], [8, -9], [26, -12], [50, -3]], 90), 3.8, '#78b7ca');
+  ], 120), 2.35, '#d9bd88');
+  const stream = ribbon(sampledCurve([[-49, -18], [-27, -12], [-10, -15], [8, -9], [26, -12], [50, -3]], 90), 2.7, '#78b7ca');
   group.add(mainPath, stream);
 
   const bridge = new THREE.Group();

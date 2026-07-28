@@ -3000,9 +3000,10 @@ function setSceneMode(nextMode) {
     outdoorWorld.setFarmState(outdoorFarm, clock.elapsedTime);
     outdoorWorld.setBuildStage(outdoorBuild.stage);
     outdoorWorld.setToy(selectedOutdoorToyKind, outdoorToyPlaced, outdoorPlayer);
-    scene.background.set('#dcebd6');
-    scene.fog.near = 48;
-    scene.fog.far = 118;
+    scene.background.set('#9ed6ef');
+    scene.fog.color.set('#9ed6ef');
+    scene.fog.near = 62;
+    scene.fog.far = 190;
     controls.enabled = true;
     controls.enablePan = false;
     controls.enableRotate = true;
