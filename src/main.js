@@ -2802,7 +2802,7 @@ function handleCameraButton(event) {
   if (now - cameraButtonHandledAt < 350) return;
   cameraButtonHandledAt = now;
   if (shareCardCapture.active) shareCardCapture.close();
-  else shareCardCapture.openAndCapture();
+  else shareCardCapture.open();
 }
 document.getElementById('btn-export-png').addEventListener('pointerup', handleCameraButton);
 document.getElementById('btn-export-png').addEventListener('click', handleCameraButton);
