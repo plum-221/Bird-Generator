@@ -1,5 +1,13 @@
 # 调研发现
 
+## Cloudflare Pages 第二站点（2026-07-28）
+
+- 用户给出的 `yqlr.page.dex` 不是 Cloudflare Pages 的标准项目域名格式；Pages 项目 `yqlr` 对应的可用二级域名为 `yqlr.pages.dev`。
+- 当前 Cloudflare 账号具备 Pages 写权限，`yqlr` 项目此前未占用；采用 Direct Upload 将本地 `dist/` 作为第二托管渠道，不影响原 GitHub Pages。
+- Vite 默认根路径构建可直接部署到 Cloudflare Pages；生产包共上传 7 个文件，正式入口为 `https://yqlr.pages.dev/`。
+- 新站真实 Chrome 验收通过：桌面鼠标和 390×844 手机触摸均进入 `pet-head / sustain / love`，松手进入 `end`；页面标题、Canvas 与正式哈希资源均正常加载。
+- 本机代理会干扰 Wrangler 的 Pages API 请求；仅在单条 Wrangler 命令进程内临时清空代理环境变量即可正常创建、查询和部署，不修改系统代理配置。
+
 ## 持续抚摸交互（2026-07-28）
 
 - 现有手势跟踪器在首次越过距离门槛后就停止发事件，因此模型只能得到一次表情脉冲；持续感需要在同一手势内按移动距离与时间节流续期。
