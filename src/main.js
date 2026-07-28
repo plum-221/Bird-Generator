@@ -14,26 +14,6 @@ import { createToyWorld } from './toys.js';
 import { createRugLayer } from './rug.js';
 import { createContainer, getContainerDescriptor } from './container.js';
 import { createRandomBgm } from './bgm.js';
-import { createOutdoorControls } from './outdoorControls.js';
-import { createOutdoorScene } from './outdoorScene.js';
-import {
-  OUTDOOR_GARDEN_CENTER,
-  OUTDOOR_HOUSE_CENTER,
-  OUTDOOR_NPCS,
-  OUTDOOR_TALK_EXIT_DISTANCE,
-  OUTDOOR_TREES,
-  outdoorGardenColliders,
-  advanceOutdoorBuild,
-  createOutdoorFarmState,
-  findNearbyOutdoorNpc,
-  interactOutdoorFarm,
-  isOutdoorTestMuted,
-  outdoorCropStage,
-  outdoorBubbleFor,
-  outdoorHouseColliders,
-  outdoorTerrainHeight,
-  stepOutdoorCharacter,
-} from './outdoorWalkModel.js';
 import { initI18n } from './i18n.js';
 import { createShareCardCapture } from './shareCard.js';
 import { createSpeechBubbleController } from './speechBubbles.js';
@@ -63,8 +43,7 @@ import {
 } from './birdMotionStateMachine.js';
 
 const i18n = initI18n();
-const testMuted = isOutdoorTestMuted(window.location.search);
-const bgm = createRandomBgm(document.getElementById('bgm-toggle'), { startPaused: testMuted });
+const bgm = createRandomBgm(document.getElementById('bgm-toggle'));
 
 // Initial canned-cat loading animation. The overlay is present in index.html,
 // so it paints before the Three.js bundle is ready. It only completes after
@@ -279,7 +258,7 @@ scene.background = new THREE.Color('#efe9dd');
 scene.fog = new THREE.Fog('#efe9dd', 14, 32);
 
 
-const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 220);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
 camera.position.set(2.9, 1.7, 4.2);
 
 const controls = new OrbitControls(camera, canvas);
@@ -801,31 +780,6 @@ const expressionOverlay = createBirdExpressionOverlay({
   getBird: () => cat,
 });
 let petElapsed = 0;
-let sceneMode = 'indoor';
-let outdoorWorld = null;
-let outdoorControls = null;
-let nearbyOutdoorNpc = null;
-let activeOutdoorNpc = null;
-let outdoorBubbleClosesAt = 0;
-let outdoorBubbleArmed = true;
-const outdoorBubbleLineByNpc = new Map();
-const outdoorSpawnY = outdoorTerrainHeight(0, 10);
-const outdoorPlayer = {
-  x: 0, y: outdoorSpawnY, z: 10, groundY: outdoorSpawnY,
-  verticalVelocity: 0, grounded: true,
-  heading: Math.PI, moving: false, boundaryAmount: 0,
-};
-let outdoorJumpQueued = false;
-let outdoorFarm = createOutdoorFarmState(0);
-let outdoorBuild = { stage: 0, label: 'empty', complete: false };
-let outdoorToyPlaced = false;
-let selectedOutdoorToyKind = 'bell';
-const indoorCamera = { position: new THREE.Vector3(), target: new THREE.Vector3() };
-const outdoorCameraTarget = new THREE.Vector3();
-const outdoorCameraShift = new THREE.Vector3();
-const outdoorCameraForward = new THREE.Vector3();
-const outdoorBubbleAnchor = new THREE.Vector3();
-const indoorOrbitSettings = {};
 
 function triggerBirdInteraction(event) {
   if (!event) return;
@@ -1254,7 +1208,6 @@ function beginInteractiveGrab(e, { toyHit = null, containerHit = null, catHit = 
 }
 
 canvas.addEventListener('pointerdown', (e) => {
-  if (sceneMode === 'outdoor') return;
   if (e.button !== 0) return;
   if (e.pointerType === 'touch') {
     activeCanvasTouches.add(e.pointerId);
@@ -1296,7 +1249,6 @@ canvas.addEventListener('pointerdown', (e) => {
 }, { capture: true });
 
 canvas.addEventListener('pointermove', (e) => {
-  if (sceneMode === 'outdoor') return;
   if (pendingToyPointer?.pointerId === e.pointerId) {
     if (activeCanvasTouches.size > 1) {
       pendingToyPointer = null;
@@ -1442,10 +1394,8 @@ function syncFaceToPokes() {
 let softWasActive = false;
 function stepSim(dt) {
   updatePokes(dt);
-  if (sceneMode === 'indoor') {
-    toyWorld.step(dt);
-    fishRain.update(dt);
-  }
+  toyWorld.step(dt);
+  fishRain.update(dt);
 
   // 整猫提起（跟手）与松手落回（欠阻尼弹簧 + 落地截断）
   if (lift.holding) {
@@ -1466,34 +1416,7 @@ function stepSim(dt) {
   let worldZ = 0;
   let worldHeading = 0;
   let travelDirection = 1;
-  if (sceneMode === 'outdoor' && outdoorControls) {
-    camera.getWorldDirection(outdoorCameraForward);
-    const cameraHeading = Math.atan2(outdoorCameraForward.x, -outdoorCameraForward.z);
-    const next = stepOutdoorCharacter(outdoorPlayer, outdoorControls.getInput(), dt, {
-      cameraHeading,
-      jump: outdoorJumpQueued,
-      circles: [...OUTDOOR_TREES, ...(outdoorWorld?.getNpcColliders?.() ?? [])],
-      boxes: [...outdoorGardenColliders(), ...outdoorHouseColliders(outdoorBuild.stage)],
-      groundHeight: outdoorWorld?.getGroundHeight,
-    });
-    outdoorJumpQueued = false;
-    const headingDelta = Math.atan2(
-      Math.sin(next.heading - outdoorPlayer.heading),
-      Math.cos(next.heading - outdoorPlayer.heading)
-    );
-    outdoorPlayer.x = next.x;
-    outdoorPlayer.z = next.z;
-    outdoorPlayer.heading += headingDelta * Math.min(1, dt * 11);
-    outdoorPlayer.moving = next.moving;
-    outdoorPlayer.boundaryAmount = next.boundaryAmount;
-    outdoorPlayer.y = next.y;
-    outdoorPlayer.groundY = next.groundY;
-    outdoorPlayer.verticalVelocity = next.verticalVelocity;
-    outdoorPlayer.grounded = next.grounded;
-    worldX = outdoorPlayer.x;
-    worldZ = outdoorPlayer.z;
-    worldHeading = outdoorPlayer.heading;
-  } else if (cat && motionRig && params.motionDebug) {
+  if (cat && motionRig && params.motionDebug) {
     if (params.motionStateMachine) {
       motionMachineFrame = motionMachine.update(dt, { speedScale: params.motionSpeed });
       activeMotionAction = motionMachineFrame.action;
@@ -1528,15 +1451,13 @@ function stepSim(dt) {
     const rootZ = motionState?.rootZ ?? 0;
     const c = Math.cos(worldHeading);
     const s = Math.sin(worldHeading);
-    const outdoor = sceneMode === 'outdoor';
     cat.position.set(
-      worldX + rootX * c + rootZ * s + (outdoor ? 0 : containerJiggle.position.x),
-      (outdoor ? 0 : lift.y) + CAT_VISUAL_CONTACT_LIFT
+      worldX + rootX * c + rootZ * s + containerJiggle.position.x,
+      lift.y + CAT_VISUAL_CONTACT_LIFT
         + (cat.userData.animationRootLift ?? 0)
-        + (outdoor ? 0 : containerJiggle.position.y),
-      worldZ - rootX * s + rootZ * c + (outdoor ? 0 : containerJiggle.position.z)
+        + containerJiggle.position.y,
+      worldZ - rootX * s + rootZ * c + containerJiggle.position.z
     );
-    if (outdoor) cat.rotation.set(0, worldHeading, 0);
     if (containerJiggleEnabled()) {
       toyWorld.setCatTransform?.(
         containerJiggle.position.x,
@@ -1622,8 +1543,7 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 1 / 30);
   petElapsed += dt;
   stepSim(dt);
-  if (sceneMode === 'outdoor') updateOutdoorMode(dt);
-  else updateWeather(dt);
+  updateWeather(dt);
   const staticIdleSample = cat?.userData.updateStaticIdle?.(
     clock.elapsedTime,
     !params.motionDebug
@@ -1644,17 +1564,11 @@ renderer.setAnimationLoop(() => {
     eyeGazeCurrent.x,
     eyeGazeCurrent.y
   );
-  if (sceneMode === 'indoor') {
-    const expressionSample = expressionController.update(petElapsed);
-    cat?.userData.applyExpression?.(expressionSample, dt, !params.motionDebug);
-    expressionOverlay.update(expressionSample);
-  } else {
-    expressionOverlay.hide();
-  }
+  const expressionSample = expressionController.update(petElapsed);
+  cat?.userData.applyExpression?.(expressionSample, dt, !params.motionDebug);
+  expressionOverlay.update(expressionSample);
   controls.update();
-  if (sceneMode === 'indoor') {
-    toyWorld.updateFishPupils(camera);
-  }
+  toyWorld.updateFishPupils(camera);
   speechBubbles.update(dt);
   syncScreenScale();
   renderer.render(scene, camera);
@@ -2804,312 +2718,6 @@ for (const [type, control] of Object.entries(weatherAmountControls)) {
   setWeatherAmount(type, control.input.value);
 }
 setWeather('sunny');
-
-// ---------------------------------------------------------------- 户外散步场景
-const outdoorNpcBubble = document.getElementById('outdoor-npc-bubble');
-const outdoorNpcBubbleName = document.getElementById('outdoor-npc-bubble-name');
-const outdoorNpcBubbleText = document.getElementById('outdoor-npc-bubble-text');
-const outdoorGameHud = document.getElementById('outdoor-game-hud');
-const outdoorFarmStatus = document.getElementById('outdoor-farm-status');
-const outdoorBuildStatus = document.getElementById('outdoor-build-status');
-const outdoorToyStatus = document.getElementById('outdoor-toy-status');
-const outdoorContextHint = document.getElementById('outdoor-context-hint');
-const outdoorInteractButton = document.getElementById('outdoor-interact-button');
-const outdoorBuildButton = document.getElementById('outdoor-build-button');
-const toyPackButton = document.getElementById('toy-pack-button');
-const indoorVisibility = {};
-const toyLabels = { bell: '铃铛', yarn: '毛线球', ball: '小球', fish: '小鱼', duck: '小鸭' };
-const outdoorToyKinds = ['bell', 'yarn', 'ball', 'fish', 'duck']
-  .filter((kind) => toyWorld.toys.some((toy) => toy.kind === kind));
-const buildLabels = ['等待地基', '地基完成', '木框完成', '墙体完成', '小屋完成'];
-
-function distanceToOutdoor(point) {
-  return Math.hypot(outdoorPlayer.x - point.x, outdoorPlayer.z - point.z);
-}
-
-function nearestFarmSlot() {
-  let best = null;
-  for (let index = 0; index < 4; index += 1) {
-    const x = OUTDOOR_GARDEN_CENTER.x + (index % 2 - 0.5) * 2.05;
-    const z = OUTDOOR_GARDEN_CENTER.z + (Math.floor(index / 2) - 0.5) * 2.45;
-    const distance = Math.hypot(outdoorPlayer.x - x, outdoorPlayer.z - z);
-    if (!best || distance < best.distance) best = { index, distance };
-  }
-  return best;
-}
-
-function syncOutdoorHud() {
-  const now = clock?.elapsedTime ?? 0;
-  const cropStages = outdoorFarm.slots.map((slot) => outdoorCropStage(slot, now));
-  const empty = cropStages.filter((stage) => stage === 'empty').length;
-  const grown = cropStages.filter((stage) => stage === 'grown').length;
-  outdoorFarmStatus.textContent = grown ? `${grown} 格可收获` : `${empty} 格空地`;
-  outdoorBuildStatus.textContent = buildLabels[outdoorBuild.stage] ?? buildLabels[0];
-  outdoorToyStatus.textContent = `${toyLabels[selectedOutdoorToyKind] ?? selectedOutdoorToyKind} · ${outdoorToyPlaced ? '已放下' : '已收好'}`;
-  const farmNear = distanceToOutdoor(OUTDOOR_GARDEN_CENTER) < 5.2;
-  const houseNear = distanceToOutdoor(OUTDOOR_HOUSE_CENTER) < 6.4;
-  outdoorInteractButton.disabled = !farmNear;
-  outdoorBuildButton.disabled = !houseNear || outdoorBuild.complete;
-  if (farmNear) {
-    const nearest = nearestFarmSlot();
-    const stage = outdoorCropStage(outdoorFarm.slots[nearest.index], now);
-    outdoorInteractButton.querySelector('span').textContent = stage === 'grown' ? '收获' : stage === 'empty' ? '种菜' : '生长中';
-    outdoorContextHint.textContent = stage === 'grown' ? '按 F 收获这块菜地' : stage === 'empty' ? '按 F 在最近的菜格播种' : '幼苗正在慢慢长大';
-  } else if (houseNear) {
-    outdoorContextHint.textContent = outdoorBuild.complete ? '小屋已经完成，可以从门洞进入' : '按 B 继续搭建小屋';
-  } else {
-    outdoorContextHint.textContent = 'WASD 移动 · 拖动画面转视角 · Space 跳跃 · Q 表情';
-  }
-  outdoorWorld?.setFarmState(outdoorFarm, now);
-  viewport.dataset.outdoorFarmGrown = String(grown);
-  viewport.dataset.outdoorBuildStage = String(outdoorBuild.stage);
-  viewport.dataset.outdoorToyPlaced = String(outdoorToyPlaced);
-}
-
-function performOutdoorFarmAction() {
-  if (sceneMode !== 'outdoor' || distanceToOutdoor(OUTDOOR_GARDEN_CENTER) >= 5.2) return;
-  const nearest = nearestFarmSlot();
-  outdoorFarm = interactOutdoorFarm(outdoorFarm, nearest.index, clock.elapsedTime);
-  syncOutdoorHud();
-}
-
-function performOutdoorBuildAction() {
-  if (sceneMode !== 'outdoor' || distanceToOutdoor(OUTDOOR_HOUSE_CENTER) >= 6.4 || outdoorBuild.complete) return;
-  outdoorBuild = advanceOutdoorBuild(outdoorBuild);
-  outdoorWorld?.setBuildStage(outdoorBuild.stage);
-  syncOutdoorHud();
-}
-
-function toggleOutdoorToy() {
-  if (sceneMode !== 'outdoor') return;
-  outdoorToyPlaced = !outdoorToyPlaced;
-  outdoorWorld?.setToy(selectedOutdoorToyKind, outdoorToyPlaced, outdoorPlayer);
-  syncOutdoorHud();
-}
-
-function triggerOutdoorEmote() {
-  if (sceneMode !== 'outdoor') return;
-  const emote = outdoorWorld?.triggerEmote() ?? 'happy';
-  viewport.dataset.outdoorEmote = emote;
-}
-
-toyPackButton?.addEventListener('click', () => {
-  const current = Math.max(0, outdoorToyKinds.indexOf(selectedOutdoorToyKind));
-  selectedOutdoorToyKind = outdoorToyKinds[(current + 1) % outdoorToyKinds.length] ?? 'bell';
-  toyPackButton.querySelector('span').textContent = `玩具包：${toyLabels[selectedOutdoorToyKind] ?? selectedOutdoorToyKind}`;
-  syncOutdoorHud();
-});
-
-function closeOutdoorNpcBubble() {
-  activeOutdoorNpc = null;
-  outdoorBubbleClosesAt = 0;
-  outdoorNpcBubble?.classList.remove('is-visible');
-  outdoorNpcBubble?.setAttribute('aria-hidden', 'true');
-  viewport.dataset.outdoorNpcBubbleOpen = 'false';
-}
-
-function showOutdoorNpcBubble(npc = nearbyOutdoorNpc) {
-  if (!npc) return;
-  const lineIndex = outdoorBubbleLineByNpc.get(npc.id) ?? 0;
-  const line = outdoorBubbleFor(npc, i18n.locale, lineIndex);
-  outdoorBubbleLineByNpc.set(npc.id, lineIndex + 1);
-  activeOutdoorNpc = npc;
-  outdoorNpcBubbleName.textContent = line.speaker;
-  outdoorNpcBubbleText.textContent = line.text;
-  outdoorNpcBubble.classList.add('is-visible');
-  outdoorNpcBubble.setAttribute('aria-hidden', 'false');
-  viewport.dataset.outdoorNpcBubbleOpen = 'true';
-  viewport.dataset.outdoorNpcBubbleNpc = npc.id;
-  viewport.dataset.outdoorNpcBubbleIndex = String(line.index);
-  outdoorBubbleClosesAt = petElapsed + 4.2;
-}
-
-function positionOutdoorNpcBubble() {
-  if (!activeOutdoorNpc || !outdoorNpcBubble) return;
-  const model = outdoorWorld?.getNpcObject(activeOutdoorNpc.id);
-  if (!model) return;
-  model.getWorldPosition(outdoorBubbleAnchor);
-  outdoorBubbleAnchor.y += 2.5 * (activeOutdoorNpc.scale ?? 0.75);
-  outdoorBubbleAnchor.project(camera);
-  const x = (outdoorBubbleAnchor.x * 0.5 + 0.5) * viewport.clientWidth;
-  const y = (-outdoorBubbleAnchor.y * 0.5 + 0.5) * viewport.clientHeight;
-  outdoorNpcBubble.style.left = `${THREE.MathUtils.clamp(x, 18, viewport.clientWidth - 18)}px`;
-  outdoorNpcBubble.style.top = `${THREE.MathUtils.clamp(y, 72, viewport.clientHeight - 24)}px`;
-}
-
-function updateOutdoorMode(dt) {
-  outdoorWorld?.setPlayerTransform(outdoorPlayer);
-  outdoorWorld?.update(dt, clock.elapsedTime, outdoorPlayer);
-  outdoorCameraTarget.set(outdoorPlayer.x, outdoorPlayer.y + 1.35, outdoorPlayer.z);
-  outdoorCameraShift.copy(outdoorCameraTarget).sub(controls.target).multiplyScalar(1 - Math.exp(-dt * 8));
-  controls.target.add(outdoorCameraShift);
-  camera.position.add(outdoorCameraShift);
-
-  nearbyOutdoorNpc = findNearbyOutdoorNpc(outdoorPlayer);
-  if (!nearbyOutdoorNpc) outdoorBubbleArmed = true;
-  if (nearbyOutdoorNpc && (outdoorBubbleArmed || activeOutdoorNpc?.id !== nearbyOutdoorNpc.id)) {
-    outdoorBubbleArmed = false;
-    showOutdoorNpcBubble(nearbyOutdoorNpc);
-  }
-  if (activeOutdoorNpc) {
-    const distance = Math.hypot(activeOutdoorNpc.x - outdoorPlayer.x, activeOutdoorNpc.z - outdoorPlayer.z);
-    if (distance > OUTDOOR_TALK_EXIT_DISTANCE || (outdoorBubbleClosesAt && petElapsed >= outdoorBubbleClosesAt)) closeOutdoorNpcBubble();
-    else positionOutdoorNpcBubble();
-  }
-  syncOutdoorHud();
-
-  viewport.dataset.outdoorX = outdoorPlayer.x.toFixed(3);
-  viewport.dataset.outdoorZ = outdoorPlayer.z.toFixed(3);
-  viewport.dataset.outdoorHeading = outdoorPlayer.heading.toFixed(3);
-  viewport.dataset.outdoorMoving = String(outdoorPlayer.moving);
-  viewport.dataset.outdoorBoundary = outdoorPlayer.boundaryAmount.toFixed(3);
-  viewport.dataset.outdoorY = outdoorPlayer.y.toFixed(3);
-  viewport.dataset.outdoorGrounded = String(outdoorPlayer.grounded);
-  viewport.dataset.outdoorNearbyNpc = nearbyOutdoorNpc?.id ?? '';
-}
-
-function setSceneMode(nextMode) {
-  const next = nextMode === 'outdoor' ? 'outdoor' : 'indoor';
-  if (next === sceneMode) return;
-  if (next === 'outdoor') {
-    outdoorWorld ??= createOutdoorScene(scene, params, { toyCatalog: toyWorld.toys });
-    indoorCamera.position.copy(camera.position);
-    indoorCamera.target.copy(controls.target);
-    indoorOrbitSettings.minDistance = controls.minDistance;
-    indoorOrbitSettings.maxDistance = controls.maxDistance;
-    indoorOrbitSettings.minPolarAngle = controls.minPolarAngle;
-    indoorOrbitSettings.maxPolarAngle = controls.maxPolarAngle;
-    indoorOrbitSettings.enablePan = controls.enablePan;
-    indoorOrbitSettings.enableRotate = controls.enableRotate;
-    indoorVisibility.rug = rugLayer.group?.visible ?? rugState.enabled;
-    indoorVisibility.toys = toyWorld.group.visible;
-    indoorVisibility.rain = rainField.group.visible;
-    indoorVisibility.clouds = cloudField.group.visible;
-    ground.visible = false;
-    blockShadowPlane.visible = false;
-    hatchShadowPlane.visible = false;
-    rugLayer.setVisible(false);
-    toyWorld.group.visible = false;
-    rainField.group.visible = false;
-    cloudField.group.visible = false;
-    fishRain.setEnabled(false);
-    weatherAudio.setRain(false);
-    cat?.userData.containerObject && (cat.userData.containerObject.visible = false);
-    if (cat) cat.visible = false;
-    outdoorWorld.setVisible(true);
-    outdoorWorld.setFarmState(outdoorFarm, clock.elapsedTime);
-    outdoorWorld.setBuildStage(outdoorBuild.stage);
-    outdoorWorld.setToy(selectedOutdoorToyKind, outdoorToyPlaced, outdoorPlayer);
-    scene.background.set('#78c4ed');
-    scene.fog.color.set('#78c4ed');
-    scene.fog.near = 62;
-    scene.fog.far = 190;
-    controls.enabled = true;
-    controls.enablePan = false;
-    controls.enableRotate = true;
-    controls.minDistance = 4.2;
-    controls.maxDistance = 13;
-    controls.minPolarAngle = Math.PI * 0.12;
-    controls.maxPolarAngle = Math.PI * 0.46;
-    outdoorCameraTarget.set(outdoorPlayer.x, outdoorPlayer.y + 1.35, outdoorPlayer.z);
-    controls.target.copy(outdoorCameraTarget);
-    camera.position.set(outdoorPlayer.x + 7.2, outdoorPlayer.y + 4.8, outdoorPlayer.z + 8.4);
-    controls.update();
-    speechBubbles.hide();
-    expressionOverlay.hide();
-    sceneMode = 'outdoor';
-    outdoorGameHud.hidden = false;
-    syncOutdoorHud();
-  } else {
-    sceneMode = 'indoor';
-    outdoorWorld?.setVisible(false);
-    ground.visible = true;
-    blockShadowPlane.visible = true;
-    hatchShadowPlane.visible = true;
-    rugLayer.setVisible(rugState.enabled);
-    toyWorld.group.visible = indoorVisibility.toys ?? true;
-    cat?.userData.containerObject && (cat.userData.containerObject.visible = true);
-    if (cat) cat.visible = true;
-    camera.position.copy(indoorCamera.position);
-    controls.target.copy(indoorCamera.target);
-    controls.enabled = true;
-    controls.minDistance = indoorOrbitSettings.minDistance ?? 1.6;
-    controls.maxDistance = indoorOrbitSettings.maxDistance ?? 28;
-    controls.minPolarAngle = indoorOrbitSettings.minPolarAngle ?? 0;
-    controls.maxPolarAngle = indoorOrbitSettings.maxPolarAngle ?? Math.PI * 0.55;
-    controls.enablePan = indoorOrbitSettings.enablePan ?? true;
-    controls.enableRotate = indoorOrbitSettings.enableRotate ?? true;
-    controls.update();
-    scene.fog.near = 14;
-    scene.fog.far = 32;
-    outdoorGameHud.hidden = true;
-    closeOutdoorNpcBubble();
-    outdoorBubbleArmed = true;
-    nearbyOutdoorNpc = null;
-    syncWeatherLayers();
-  }
-  outdoorControls?.setMode(sceneMode);
-  viewport.dataset.sceneMode = sceneMode;
-  viewport.dataset.outdoorNpcCount = String(outdoorWorld?.getNpcCount() ?? 0);
-  resize();
-}
-
-outdoorControls = createOutdoorControls({
-  root: document.getElementById('outdoor-mobile-controls'),
-  actionRoot: document.getElementById('outdoor-action-controls'),
-  toggleButton: document.getElementById('outdoor-mode-toggle'),
-  onModeChange: setSceneMode,
-  onJump: () => { if (sceneMode === 'outdoor') outdoorJumpQueued = true; },
-  onEmote: triggerOutdoorEmote,
-  onInteract: performOutdoorFarmAction,
-  onBuild: performOutdoorBuildAction,
-  onToy: toggleOutdoorToy,
-});
-window.__outdoorControls = outdoorControls;
-viewport.dataset.testMuted = String(testMuted);
-viewport.dataset.sceneMode = sceneMode;
-window.addEventListener('meow:localechange', () => {
-  if (activeOutdoorNpc) {
-    const lineIndex = Math.max(0, (outdoorBubbleLineByNpc.get(activeOutdoorNpc.id) ?? 1) - 1);
-    const line = outdoorBubbleFor(activeOutdoorNpc, i18n.locale, lineIndex);
-    outdoorNpcBubbleName.textContent = line.speaker;
-    outdoorNpcBubbleText.textContent = line.text;
-  }
-});
-window.__setSceneMode = setSceneMode;
-window.__getOutdoorWalk = () => ({
-  mode: sceneMode,
-  player: { ...outdoorPlayer },
-  nearbyNpc: nearbyOutdoorNpc?.id ?? null,
-  bubbleNpc: activeOutdoorNpc?.id ?? null,
-  npcCount: outdoorWorld?.getNpcCount() ?? 0,
-  independentNpcCount: outdoorWorld?.getIndependentNpcCount() ?? 0,
-  groundCollider: outdoorWorld?.getGroundCollider()?.type ?? null,
-  grassBladeCount: outdoorWorld?.getGrassBladeCount() ?? 0,
-  farm: structuredClone(outdoorFarm),
-  build: { ...outdoorBuild },
-  toy: { kind: selectedOutdoorToyKind, placed: outdoorToyPlaced },
-  mobileControls: viewport.dataset.outdoorMobileControls === 'true',
-  testMuted,
-});
-window.__setOutdoorPosition = (x, z) => {
-  outdoorPlayer.x = Number(x) || 0;
-  outdoorPlayer.z = Number(z) || 0;
-  outdoorPlayer.y = outdoorTerrainHeight(outdoorPlayer.x, outdoorPlayer.z);
-  outdoorPlayer.groundY = outdoorPlayer.y;
-  outdoorPlayer.verticalVelocity = 0;
-  outdoorPlayer.grounded = true;
-  return window.__getOutdoorWalk();
-};
-window.__outdoorAction = (action) => {
-  if (action === 'jump') outdoorJumpQueued = true;
-  if (action === 'emote') triggerOutdoorEmote();
-  if (action === 'farm') performOutdoorFarmAction();
-  if (action === 'build') performOutdoorBuildAction();
-  if (action === 'toy') toggleOutdoorToy();
-  return window.__getOutdoorWalk();
-};
-window.__bgm = bgm;
 
 // ---------------------------------------------------------------- 随机与导出
 function randomizeAll() {
