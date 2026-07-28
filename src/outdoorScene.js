@@ -234,11 +234,6 @@ function addTrees(group) {
     model.scale.setScalar(tree.scale);
     const trunk = outlined(new THREE.CylinderGeometry(0.25, 0.48, 3.4, 9), toon('#8f6b45'), 'treeTrunk', 1.035);
     trunk.position.y = 1.7;
-    const branchMaterial = toon('#76563c');
-    for (const [x, y, z, rotation] of [[-0.32, 2.48, 0, -0.65], [0.34, 2.62, 0.04, 0.62]]) {
-      const branch = outlined(new THREE.CylinderGeometry(0.075, 0.13, 1.4, 7), branchMaterial, 'treeBranch', 1.03);
-      branch.position.set(x, y, z); branch.rotation.z = rotation; model.add(branch);
-    }
     const leafMaterial = toon(tree.variant === 1 ? '#789d5c' : tree.variant === 2 ? '#90aa61' : '#6f9458');
     const highlightMaterial = toon(tree.variant === 2 ? '#b3c975' : '#a8bf6d');
     const clusters = [[0, 4.05, 0, 1.08], [-0.82, 3.7, 0.15, 0.7], [0.78, 3.76, 0.1, 0.76]];
