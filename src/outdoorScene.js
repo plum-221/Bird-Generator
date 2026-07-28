@@ -381,11 +381,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
   ground.receiveShadow = true;
   group.add(ground);
 
-  const mainPath = ribbon(sampledCurve([
-    [0, 10], [-11, 4], [-17, -12], [-3, -27], [17, -22], [29, -5], [20, 15], [5, 24], [-14, 19], [-25, 7], [-17, -12],
-  ], 120), 2.35, '#d9bd88');
-  const stream = ribbon(sampledCurve([[-49, -18], [-27, -12], [-10, -15], [8, -9], [26, -12], [50, -3]], 90), 2.7, '#78b7ca');
-  group.add(mainPath, stream);
+  // 不再铺设从镜头脚下延伸的长路径带：近景透视会把它压成巨型白色扇面。
 
   const bridge = new THREE.Group();
   const bridgeY = terrainGroundHeight(0, -11.8) + 0.22;
@@ -401,10 +397,6 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
   const garden = createGarden(group);
   const house = createHouse(group);
 
-  const panoramaMaterial = new THREE.MeshBasicMaterial({ side: THREE.BackSide, map: createSkyTexture() });
-  const panorama = new THREE.Mesh(new THREE.CylinderGeometry(94, 94, 52, 48, 1, true), panoramaMaterial);
-  panorama.position.y = 22;
-  group.add(panorama);
 
   const player = buildBird({ ...params, pose: 'standing', motionDebug: false, seed: Number(params.seed) || 2210728 }, 'draft');
   player.name = 'outdoorPlayerBird';
