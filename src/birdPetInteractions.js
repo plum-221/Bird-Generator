@@ -39,11 +39,14 @@ export function createBirdExpressionController({ idleAfter = 18, cooldown = 0.6 
     const fade = Number.isFinite(activeUntil) && remaining < 0.18
       ? Math.max(0, remaining / 0.18)
       : 1;
-    const expression = BIRD_EXPRESSIONS[active.state];
+    const baseExpression = BIRD_EXPRESSIONS[active.state];
+    const expression = active.expressionPatch
+      ? { ...baseExpression, ...active.expressionPatch }
+      : baseExpression;
     return {
       state: active.state,
       intensity: active.intensity * fade,
-      symbol: expression.symbol,
+      symbol: time < active.symbolUntil ? expression.symbol : '',
       expression,
       eventId: active.eventId,
     };
@@ -58,7 +61,7 @@ export function createBirdExpressionController({ idleAfter = 18, cooldown = 0.6 
     }
   };
 
-  const trigger = (eventId, time, intensity = 1) => {
+  const trigger = (eventId, time, intensity = 1, options = {}) => {
     const reaction = INTERACTION_REACTIONS[eventId];
     if (!reaction) return sample(time);
     if (eventId !== 'idle-sleep') markActivity(time);
@@ -70,13 +73,21 @@ export function createBirdExpressionController({ idleAfter = 18, cooldown = 0.6 
     ) return sample(time);
     if (time < cooldownUntil && reaction.priority < 3) return sample(time);
 
+    const symbolUntil = options.showSymbol === false
+      ? (active?.eventId === eventId ? active.symbolUntil : 0)
+      : Number.isFinite(options.symbolDuration)
+        ? time + options.symbolDuration
+        : Infinity;
     active = {
       eventId,
       state: reaction.state,
       priority: reaction.priority,
       intensity: Math.max(0.25, Math.min(1.35, intensity)),
+      expressionPatch: options.expressionPatch ?? null,
+      symbolUntil,
     };
-    activeUntil = Number.isFinite(reaction.duration) ? time + reaction.duration : Infinity;
+    const duration = options.duration ?? reaction.duration;
+    activeUntil = Number.isFinite(duration) ? time + duration : Infinity;
     sleeping = eventId === 'idle-sleep';
     return sample(time);
   };
@@ -129,7 +140,33 @@ const ZONE_EVENTS = {
   wing: 'touch-wing',
 };
 
-export function createBirdGestureTracker({ strokeDistance = 12, strokeTime = 0.12, teaseWindow = 0.9 } = {}) {
+const CONTINUOUS_PETTING_ZONES = new Set(['head', 'chest', 'body']);
+
+function continuousPettingEvent(gesture, phase, dx) {
+  const direction = Math.max(-1, Math.min(1, dx / 14));
+  const expressionPatch = gesture.zone === 'head'
+    ? { eyeY: 0.46, headTilt: direction * 0.12, headPitch: 0.03, fluff: 0.16 }
+    : gesture.zone === 'chest'
+      ? { eyeY: 0.58, headTilt: direction * 0.07, headPitch: 0.08, wingLift: -0.04, fluff: 0.16 }
+      : { eyeY: 0.72, headTilt: direction * 0.05, headPitch: 0.04, wingLift: -0.06, bodyBob: 0.012, fluff: 0.24 };
+  return {
+    id: ZONE_EVENTS[gesture.zone] ?? 'pet-body',
+    intensity: Math.min(1.25, 0.82 + gesture.distance / 90),
+    continuous: true,
+    phase,
+    duration: phase === 'end' ? 0.42 : 0.55,
+    expressionPatch,
+    symbolDuration: phase === 'start' ? 0.45 : undefined,
+    showSymbol: phase === 'start',
+  };
+}
+
+export function createBirdGestureTracker({
+  strokeDistance = 12,
+  strokeTime = 0.12,
+  teaseWindow = 0.9,
+  sustainInterval = 0.15,
+} = {}) {
   let active = null;
   let recent = [];
 
@@ -144,18 +181,35 @@ export function createBirdGestureTracker({ strokeDistance = 12, strokeTime = 0.1
   };
 
   const begin = ({ zone, x, y, time }) => {
-    active = { zone, startX: x, startY: y, lastX: x, lastY: y, startTime: time, distance: 0, emitted: false };
+    active = {
+      zone, startX: x, startY: y, lastX: x, lastY: y, startTime: time,
+      distance: 0, sustainDistance: 0, lastEmitTime: time, emitted: false,
+    };
   };
 
   const move = ({ x, y, time }) => {
     if (!active) return null;
-    active.distance += Math.hypot(x - active.lastX, y - active.lastY);
+    const dx = x - active.lastX;
+    const stepDistance = Math.hypot(dx, y - active.lastY);
+    active.distance += stepDistance;
+    active.sustainDistance += stepDistance;
     active.lastX = x;
     active.lastY = y;
-    if (active.emitted || active.distance < strokeDistance || time - active.startTime < strokeTime) return null;
-    active.emitted = true;
-    const id = ZONE_EVENTS[active.zone] ?? 'pet-body';
-    return escalate({ id, intensity: Math.min(1.25, 0.78 + active.distance / 65) }, time);
+    if (!active.emitted) {
+      if (active.distance < strokeDistance || time - active.startTime < strokeTime) return null;
+      active.emitted = true;
+      active.lastEmitTime = time;
+      active.sustainDistance = 0;
+      const event = CONTINUOUS_PETTING_ZONES.has(active.zone)
+        ? continuousPettingEvent(active, 'start', dx)
+        : { id: ZONE_EVENTS[active.zone] ?? 'pet-body', intensity: Math.min(1.25, 0.78 + active.distance / 65) };
+      return escalate(event, time);
+    }
+    if (!CONTINUOUS_PETTING_ZONES.has(active.zone)) return null;
+    if (active.sustainDistance < 4 || time - active.lastEmitTime < sustainInterval) return null;
+    active.lastEmitTime = time;
+    active.sustainDistance = 0;
+    return continuousPettingEvent(active, 'sustain', dx);
   };
 
   const end = ({ x, y, time }) => {
@@ -163,7 +217,11 @@ export function createBirdGestureTracker({ strokeDistance = 12, strokeTime = 0.1
     active.distance += Math.hypot(x - active.lastX, y - active.lastY);
     const gesture = active;
     active = null;
-    if (gesture.emitted) return null;
+    if (gesture.emitted) {
+      return CONTINUOUS_PETTING_ZONES.has(gesture.zone)
+        ? continuousPettingEvent(gesture, 'end', x - gesture.lastX)
+        : null;
+    }
     const id = ZONE_EVENTS[gesture.zone] ?? 'pet-body';
     return escalate({ id, intensity: 0.86 }, time);
   };

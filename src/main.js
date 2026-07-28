@@ -783,12 +783,14 @@ let petElapsed = 0;
 
 function triggerBirdInteraction(event) {
   if (!event) return;
-  const sample = expressionController.trigger(event.id, petElapsed, event.intensity);
+  const sample = expressionController.trigger(event.id, petElapsed, event.intensity, event);
   const viewportEl = document.getElementById('viewport');
   viewportEl.dataset.birdInteractionEvent = event.id;
   viewportEl.dataset.birdInteractionState = sample.state;
+  viewportEl.dataset.birdInteractionPhase = event.phase ?? 'single';
+  viewportEl.dataset.birdPetting = String(event.continuous === true && event.phase !== 'end');
   expressionOverlay.markInteraction();
-  if (sample.eventId === event.id && Math.random() < 0.25) {
+  if (!['sustain', 'end'].includes(event.phase) && sample.eventId === event.id && Math.random() < 0.25) {
     speechBubbles.showExpression?.(sample.state);
   }
 }

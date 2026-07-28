@@ -18,6 +18,7 @@ const anchorScreen = new THREE.Vector3();
 
 export function createBirdExpressionOverlay({ element, hintElement, viewport, camera, getBird }) {
   let visibleState = '';
+  let visibleSymbol = '';
 
   function setGlyphs(symbol) {
     element.replaceChildren();
@@ -34,6 +35,7 @@ export function createBirdExpressionOverlay({ element, hintElement, viewport, ca
     element.setAttribute('aria-hidden', 'true');
     viewport.dataset.birdExpression = 'neutral';
     visibleState = '';
+    visibleSymbol = '';
   }
 
   function position() {
@@ -58,8 +60,9 @@ export function createBirdExpressionOverlay({ element, hintElement, viewport, ca
       hide();
       return;
     }
-    if (sample.state !== visibleState) {
+    if (sample.state !== visibleState || sample.symbol !== visibleSymbol) {
       visibleState = sample.state;
+      visibleSymbol = sample.symbol;
       element.dataset.expression = sample.state;
       element.dataset.symbol = sample.symbol;
       setGlyphs(sample.symbol);
