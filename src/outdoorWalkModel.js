@@ -1,0 +1,157 @@
+export const OUTDOOR_WORLD_RADIUS = 56;
+export const OUTDOOR_SOFT_WALL = 4;
+export const OUTDOOR_TALK_DISTANCE = 2.8;
+export const OUTDOOR_TALK_EXIT_DISTANCE = 4.2;
+
+const npc = (id, coatId, x, z, scale, name, lines) => ({
+  id, coatId, x, z, scale, name, lines,
+});
+
+export const OUTDOOR_NPCS = Object.freeze([
+  npc('moss', 'classic', -9, -13, 0.78,
+    { 'zh-CN': '苔苔', 'ja-JP': 'コケ', en: 'Moss' },
+    {
+      'zh-CN': ['风从花田绕了一圈才到这里。', '你慢慢走，路边的小花不会催你。', '我在数云朵，刚刚数到第七朵。'],
+      'ja-JP': ['花畑をめぐった風が、ここまで来たよ。', 'ゆっくり歩こう。道の花は急かさないよ。', '雲を数えていたんだ。いま七つ目。'],
+      en: ['The breeze reached us after circling the flowers.', 'Walk slowly. The little flowers are in no hurry.', 'I was counting clouds. That one makes seven.'],
+    }),
+  npc('pebble', 'blue', 11, -18, 0.72,
+    { 'zh-CN': '小石', 'ja-JP': 'コイシ', en: 'Pebble' },
+    {
+      'zh-CN': ['溪水把每颗石头都磨得圆圆的。', '桥上听起来像一首很轻的歌。', '你听，水里藏着第二种风声。'],
+      'ja-JP': ['小川が石をみんな丸くしたんだ。', '橋の上では小さな歌に聞こえるよ。', '聞いて。水の中にもう一つの風がある。'],
+      en: ['The stream has rounded every stone it met.', 'From the bridge it sounds like a very soft song.', 'Listen. There is another kind of wind inside the water.'],
+    }),
+  npc('sunny', 'yellow', 24, -5, 0.8,
+    { 'zh-CN': '晴团', 'ja-JP': 'ヒナタ', en: 'Sunny' },
+    {
+      'zh-CN': ['这块草地晒得刚刚好。', '黄色的花会把阳光留到傍晚。', '如果累了，就和影子一起坐一会儿。'],
+      'ja-JP': ['ここの芝生は日当たりがちょうどいいよ。', '黄色い花は夕方まで光をしまっておくんだ。', '疲れたら影と一緒に座ろう。'],
+      en: ['This patch of grass has exactly enough sunshine.', 'Yellow flowers keep a little light until evening.', 'If you are tired, sit with your shadow for a while.'],
+    }),
+  npc('mint', 'mint', 31, 15, 0.74,
+    { 'zh-CN': '薄荷', 'ja-JP': 'ミント', en: 'Mint' },
+    {
+      'zh-CN': ['山看起来很远，其实一直在陪我们。', '站高一点，风景会自己打开。', '我喜欢看树梢一层一层变淡。'],
+      'ja-JP': ['山は遠く見えるけど、ずっと一緒だよ。', '少し高く立つと、景色がひらくんだ。', '木の梢が少しずつ淡くなるのが好き。'],
+      en: ['The mountains look far away, but they keep us company.', 'Stand a little higher and the view opens by itself.', 'I like watching the treetops fade layer by layer.'],
+    }),
+  npc('sprout', 'green', 13, 29, 0.7,
+    { 'zh-CN': '芽芽', 'ja-JP': 'メメ', en: 'Sprout' },
+    {
+      'zh-CN': ['新叶子每天都比昨天勇敢一点。', '树荫里有一条凉凉的小路。', '我把最好看的叶子留在树上了。'],
+      'ja-JP': ['新しい葉は昨日より少し勇敢だね。', '木陰には涼しい小道があるよ。', 'いちばんきれいな葉は木に残しておいた。'],
+      en: ['New leaves are a little braver every day.', 'There is a cool little path beneath the trees.', 'I left the prettiest leaf where it belongs—on the tree.'],
+    }),
+  npc('cream', 'classic', -6, 34, 0.76,
+    { 'zh-CN': '奶盖', 'ja-JP': 'ミルク', en: 'Cream' },
+    {
+      'zh-CN': ['长椅不会走，所以最懂得等人。', '今天适合什么都不赶。', '坐下来以后，远处的云会走得更快。'],
+      'ja-JP': ['ベンチは歩かないから、待つのが上手。', '今日は何も急がなくていい日だよ。', '座ると遠くの雲が少し速く見える。'],
+      en: ['A bench never walks, so it knows how to wait.', 'Today is a good day not to hurry anything.', 'When you sit down, the distant clouds seem to move faster.'],
+    }),
+  npc('ripple', 'blue', -24, 23, 0.73,
+    { 'zh-CN': '涟涟', 'ja-JP': 'ナミ', en: 'Ripple' },
+    {
+      'zh-CN': ['水面把天空借来用了一会儿。', '每一道波纹都在画一个新的圆。', '别怕走慢，倒影也走得很慢。'],
+      'ja-JP': ['水面が空を少し借りているね。', '波紋はいつも新しい丸を描くんだ。', 'ゆっくりで大丈夫。影もゆっくり歩くよ。'],
+      en: ['The water borrowed the sky for a little while.', 'Every ripple is drawing a new circle.', 'There is no need to rush. Reflections walk slowly too.'],
+    }),
+  npc('pollen', 'yellow', -34, 3, 0.69,
+    { 'zh-CN': '花粉', 'ja-JP': 'ポポ', en: 'Pollen' },
+    {
+      'zh-CN': ['花田里每种颜色都有自己的位置。', '我刚刚和一只蝴蝶打过招呼。', '风一吹，整片花田就一起点头。'],
+      'ja-JP': ['花畑では色ごとに居場所があるんだ。', 'さっき蝶にあいさつしたよ。', '風が吹くと花畑みんなでうなずくよ。'],
+      en: ['Every color has its own place in the meadow.', 'I just said hello to a butterfly.', 'When the wind blows, the whole flower field nods.'],
+    }),
+  npc('fern', 'green', -27, -25, 0.77,
+    { 'zh-CN': '蕨蕨', 'ja-JP': 'シダ', en: 'Fern' },
+    {
+      'zh-CN': ['这边的路会绕回阳光里。', '树根知道所有回家的方向。', '你看见那块像小鸟的云了吗？'],
+      'ja-JP': ['この道はまた日なたへ戻るよ。', '木の根は帰り道を全部知っている。', '鳥みたいな雲、見えた？'],
+      en: ['This path loops back into the sunshine.', 'Tree roots know every way home.', 'Did you see that cloud shaped like a bird?'],
+    }),
+  npc('dew', 'mint', -5, -35, 0.71,
+    { 'zh-CN': '露珠', 'ja-JP': 'ツユ', en: 'Dew' },
+    {
+      'zh-CN': ['清晨的露珠还藏在草尖下面。', '走过这里时，鞋边会沾上一点清凉。', '南边的坡很长，但风景值得慢慢看。'],
+      'ja-JP': ['朝露がまだ草の先に隠れているよ。', 'ここを歩くと足元が少しひんやりする。', '南の坂は長いけど、景色はゆっくり見る価値があるよ。'],
+      en: ['Morning dew is still hiding beneath the grass tips.', 'Walking here leaves a little coolness by your feet.', 'The southern slope is long, but the view rewards a slow walk.'],
+    }),
+]);
+
+export function normalizeOutdoorInput(input = {}) {
+  const x = Number(Boolean(input.right)) - Number(Boolean(input.left));
+  const z = Number(Boolean(input.down)) - Number(Boolean(input.up));
+  const length = Math.hypot(x, z);
+  return length > 1 ? { x: x / length, z: z / length } : { x, z };
+}
+
+export function applyOutdoorBoundary(
+  position,
+  radius = OUTDOOR_WORLD_RADIUS,
+  softWall = OUTDOOR_SOFT_WALL
+) {
+  let x = Number(position?.x) || 0;
+  let z = Number(position?.z) || 0;
+  const distance = Math.hypot(x, z);
+  const boundaryAmount = Math.max(0, Math.min(1, (distance - (radius - softWall)) / softWall));
+  if (distance > radius && distance > 0) {
+    const scale = radius / distance;
+    x *= scale;
+    z *= scale;
+  }
+  return { x, z, boundaryAmount };
+}
+
+export function moveOutdoorPlayer(
+  state,
+  input,
+  dt,
+  { speed = 5.2, radius = OUTDOOR_WORLD_RADIUS } = {}
+) {
+  const direction = normalizeOutdoorInput(input);
+  const moving = direction.x !== 0 || direction.z !== 0;
+  const safeDt = Math.max(0, Math.min(Number(dt) || 0, 0.1));
+  const next = applyOutdoorBoundary({
+    x: (Number(state?.x) || 0) + direction.x * speed * safeDt,
+    z: (Number(state?.z) || 0) + direction.z * speed * safeDt,
+  }, radius);
+  const targetHeading = moving
+    ? Math.atan2(direction.x, direction.z)
+    : Number(state?.heading) || 0;
+  return { ...next, heading: targetHeading, moving, direction };
+}
+
+export function findNearbyOutdoorNpc(position, npcs = OUTDOOR_NPCS, maxDistance = OUTDOOR_TALK_DISTANCE) {
+  let closest = null;
+  let closestDistance = maxDistance;
+  for (const candidate of npcs) {
+    const distance = Math.hypot(candidate.x - position.x, candidate.z - position.z);
+    if (distance > closestDistance) continue;
+    closest = candidate;
+    closestDistance = distance;
+  }
+  return closest ? { ...closest, distance: closestDistance } : null;
+}
+
+export function outdoorDialogueFor(npcData, locale = 'zh-CN', index = 0) {
+  if (!npcData) return { speaker: '', text: '', index: 0 };
+  const language = npcData.lines[locale] ? locale : 'en';
+  const lines = npcData.lines[language];
+  const normalizedIndex = ((Math.floor(index) % lines.length) + lines.length) % lines.length;
+  return {
+    speaker: npcData.name[language] ?? npcData.name.en,
+    text: lines[normalizedIndex],
+    index: normalizedIndex,
+  };
+}
+
+export function isOutdoorTestMuted(search = '') {
+  const params = new URLSearchParams(String(search).replace(/^\?/, ''));
+  return params.get('test-muted') === '1' || params.get('e2e') === '1';
+}
+
+export function shouldShowMobileOutdoorControls({ mode, coarsePointer, width }) {
+  return mode === 'outdoor' && Boolean(coarsePointer) && Number(width) <= 820;
+}

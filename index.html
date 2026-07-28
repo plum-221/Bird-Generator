@@ -160,6 +160,28 @@
           </div>
         </div>
       </div>
+      <button id="outdoor-mode-toggle" class="outdoor-mode-toggle" type="button" aria-pressed="false">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M6 25c4-8 10-13 20-17M11 19c-4-1-6-4-5-8 4-1 7 1 8 4M17 14c0-5 3-8 8-9 1 5-1 8-6 10" />
+        </svg>
+        <span class="outdoor-mode-toggle__label">出去散步</span>
+      </button>
+      <div id="outdoor-mobile-controls" class="outdoor-mobile-controls" hidden aria-hidden="true" aria-label="散步移动控制">
+        <button type="button" data-outdoor-direction="up" aria-label="向前移动"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6" /></svg></button>
+        <button type="button" data-outdoor-direction="left" aria-label="向左移动"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg></button>
+        <button type="button" data-outdoor-direction="down" aria-label="向后移动"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6" /></svg></button>
+        <button type="button" data-outdoor-direction="right" aria-label="向右移动"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg></button>
+      </div>
+      <button id="outdoor-talk-button" class="outdoor-talk-button" type="button" disabled aria-label="和附近的小鸟聊天">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7h20v14H14l-6 5v-5H6z" /><path d="M11 13h10M11 17h7" /></svg>
+        <span>聊聊</span>
+      </button>
+      <div id="outdoor-nearby-hint" class="outdoor-nearby-hint" role="status" aria-live="polite"></div>
+      <div id="outdoor-dialogue" class="outdoor-dialogue" role="status" aria-live="polite" aria-hidden="true" data-i18n-ignore>
+        <div class="outdoor-dialogue__bird" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M27 19c0 7-5 11-12 10-6-1-9-6-7-11 2-6 8-9 13-6 3-4 7-4 9-2-3 1-4 4-3 9Z" /><circle cx="23" cy="13" r="1.4" /></svg></div>
+        <div class="outdoor-dialogue__copy"><strong id="outdoor-dialogue-name"></strong><p id="outdoor-dialogue-text"></p></div>
+        <span class="outdoor-dialogue__next" aria-hidden="true">E</span>
+      </div>
       <div id="lightning-flash" aria-hidden="true"></div>
       <svg id="lightning-art" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <path id="lightning-outline" class="lightning-outline"></path>

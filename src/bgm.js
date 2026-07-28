@@ -3,12 +3,12 @@ const TRACK_URLS = [
   new URL('./assets/audio/sunlit-turnip-path-2.mp3', import.meta.url).href,
 ];
 
-export function createRandomBgm(button) {
+export function createRandomBgm(button, { startPaused = false } = {}) {
   const audio = new Audio();
   audio.preload = 'metadata';
   audio.volume = 0.24;
   let currentIndex = -1;
-  let userPaused = false;
+  let userPaused = Boolean(startPaused);
 
   function pickNextIndex() {
     if (TRACK_URLS.length < 2) return 0;

@@ -14,6 +14,16 @@ import { createToyWorld } from './toys.js';
 import { createRugLayer } from './rug.js';
 import { createContainer, getContainerDescriptor } from './container.js';
 import { createRandomBgm } from './bgm.js';
+import { createOutdoorControls } from './outdoorControls.js';
+import { createOutdoorScene } from './outdoorScene.js';
+import {
+  OUTDOOR_NPCS,
+  OUTDOOR_TALK_EXIT_DISTANCE,
+  findNearbyOutdoorNpc,
+  isOutdoorTestMuted,
+  moveOutdoorPlayer,
+  outdoorDialogueFor,
+} from './outdoorWalkModel.js';
 import { initI18n } from './i18n.js';
 import { createShareCardCapture } from './shareCard.js';
 import { createSpeechBubbleController } from './speechBubbles.js';
@@ -43,7 +53,8 @@ import {
 } from './birdMotionStateMachine.js';
 
 const i18n = initI18n();
-const bgm = createRandomBgm(document.getElementById('bgm-toggle'));
+const testMuted = isOutdoorTestMuted(window.location.search);
+const bgm = createRandomBgm(document.getElementById('bgm-toggle'), { startPaused: testMuted });
 
 // Initial canned-cat loading animation. The overlay is present in index.html,
 // so it paints before the Three.js bundle is ready. It only completes after
@@ -258,7 +269,7 @@ scene.background = new THREE.Color('#efe9dd');
 scene.fog = new THREE.Fog('#efe9dd', 14, 32);
 
 
-const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 220);
 camera.position.set(2.9, 1.7, 4.2);
 
 const controls = new OrbitControls(camera, canvas);
@@ -780,6 +791,16 @@ const expressionOverlay = createBirdExpressionOverlay({
   getBird: () => cat,
 });
 let petElapsed = 0;
+let sceneMode = 'indoor';
+let outdoorWorld = null;
+let outdoorControls = null;
+let nearbyOutdoorNpc = null;
+let activeOutdoorNpc = null;
+let outdoorDialogueIndex = 0;
+const outdoorPlayer = { x: 0, z: 10, heading: Math.PI, moving: false, boundaryAmount: 0 };
+const indoorCamera = { position: new THREE.Vector3(), target: new THREE.Vector3() };
+const outdoorCameraTarget = new THREE.Vector3();
+const outdoorCameraPosition = new THREE.Vector3();
 
 function triggerBirdInteraction(event) {
   if (!event) return;
@@ -1208,6 +1229,7 @@ function beginInteractiveGrab(e, { toyHit = null, containerHit = null, catHit = 
 }
 
 canvas.addEventListener('pointerdown', (e) => {
+  if (sceneMode === 'outdoor') return;
   if (e.button !== 0) return;
   if (e.pointerType === 'touch') {
     activeCanvasTouches.add(e.pointerId);
@@ -1249,6 +1271,7 @@ canvas.addEventListener('pointerdown', (e) => {
 }, { capture: true });
 
 canvas.addEventListener('pointermove', (e) => {
+  if (sceneMode === 'outdoor') return;
   if (pendingToyPointer?.pointerId === e.pointerId) {
     if (activeCanvasTouches.size > 1) {
       pendingToyPointer = null;
@@ -1394,8 +1417,10 @@ function syncFaceToPokes() {
 let softWasActive = false;
 function stepSim(dt) {
   updatePokes(dt);
-  toyWorld.step(dt);
-  fishRain.update(dt);
+  if (sceneMode === 'indoor') {
+    toyWorld.step(dt);
+    fishRain.update(dt);
+  }
 
   // 整猫提起（跟手）与松手落回（欠阻尼弹簧 + 落地截断）
   if (lift.holding) {
@@ -1416,7 +1441,21 @@ function stepSim(dt) {
   let worldZ = 0;
   let worldHeading = 0;
   let travelDirection = 1;
-  if (cat && motionRig && params.motionDebug) {
+  if (sceneMode === 'outdoor' && outdoorControls) {
+    const next = moveOutdoorPlayer(outdoorPlayer, outdoorControls.getInput(), dt);
+    const headingDelta = Math.atan2(
+      Math.sin(next.heading - outdoorPlayer.heading),
+      Math.cos(next.heading - outdoorPlayer.heading)
+    );
+    outdoorPlayer.x = next.x;
+    outdoorPlayer.z = next.z;
+    outdoorPlayer.heading += headingDelta * Math.min(1, dt * 11);
+    outdoorPlayer.moving = next.moving;
+    outdoorPlayer.boundaryAmount = next.boundaryAmount;
+    worldX = outdoorPlayer.x;
+    worldZ = outdoorPlayer.z;
+    worldHeading = outdoorPlayer.heading;
+  } else if (cat && motionRig && params.motionDebug) {
     if (params.motionStateMachine) {
       motionMachineFrame = motionMachine.update(dt, { speedScale: params.motionSpeed });
       activeMotionAction = motionMachineFrame.action;
@@ -1451,13 +1490,15 @@ function stepSim(dt) {
     const rootZ = motionState?.rootZ ?? 0;
     const c = Math.cos(worldHeading);
     const s = Math.sin(worldHeading);
+    const outdoor = sceneMode === 'outdoor';
     cat.position.set(
-      worldX + rootX * c + rootZ * s + containerJiggle.position.x,
-      lift.y + CAT_VISUAL_CONTACT_LIFT
+      worldX + rootX * c + rootZ * s + (outdoor ? 0 : containerJiggle.position.x),
+      (outdoor ? 0 : lift.y) + CAT_VISUAL_CONTACT_LIFT
         + (cat.userData.animationRootLift ?? 0)
-        + containerJiggle.position.y,
-      worldZ - rootX * s + rootZ * c + containerJiggle.position.z
+        + (outdoor ? 0 : containerJiggle.position.y),
+      worldZ - rootX * s + rootZ * c + (outdoor ? 0 : containerJiggle.position.z)
     );
+    if (outdoor) cat.rotation.set(0, worldHeading, 0);
     if (containerJiggleEnabled()) {
       toyWorld.setCatTransform?.(
         containerJiggle.position.x,
@@ -1543,7 +1584,8 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 1 / 30);
   petElapsed += dt;
   stepSim(dt);
-  updateWeather(dt);
+  if (sceneMode === 'outdoor') updateOutdoorMode(dt);
+  else updateWeather(dt);
   const staticIdleSample = cat?.userData.updateStaticIdle?.(
     clock.elapsedTime,
     !params.motionDebug
@@ -1564,11 +1606,17 @@ renderer.setAnimationLoop(() => {
     eyeGazeCurrent.x,
     eyeGazeCurrent.y
   );
-  const expressionSample = expressionController.update(petElapsed);
-  cat?.userData.applyExpression?.(expressionSample, dt, !params.motionDebug);
-  expressionOverlay.update(expressionSample);
-  controls.update();
-  toyWorld.updateFishPupils(camera);
+  if (sceneMode === 'indoor') {
+    const expressionSample = expressionController.update(petElapsed);
+    cat?.userData.applyExpression?.(expressionSample, dt, !params.motionDebug);
+    expressionOverlay.update(expressionSample);
+  } else {
+    expressionOverlay.hide();
+  }
+  if (sceneMode === 'indoor') {
+    controls.update();
+    toyWorld.updateFishPupils(camera);
+  }
   speechBubbles.update(dt);
   syncScreenScale();
   renderer.render(scene, camera);
@@ -2718,6 +2766,154 @@ for (const [type, control] of Object.entries(weatherAmountControls)) {
   setWeatherAmount(type, control.input.value);
 }
 setWeather('sunny');
+
+// ---------------------------------------------------------------- 户外散步场景
+const outdoorDialogue = document.getElementById('outdoor-dialogue');
+const outdoorDialogueName = document.getElementById('outdoor-dialogue-name');
+const outdoorDialogueText = document.getElementById('outdoor-dialogue-text');
+const outdoorNearbyHint = document.getElementById('outdoor-nearby-hint');
+const indoorVisibility = {};
+
+function closeOutdoorDialogue() {
+  activeOutdoorNpc = null;
+  outdoorDialogue?.classList.remove('is-visible');
+  outdoorDialogue?.setAttribute('aria-hidden', 'true');
+  viewport.dataset.outdoorDialogueOpen = 'false';
+}
+
+function showOutdoorDialogue(npc = nearbyOutdoorNpc) {
+  if (!npc) return;
+  if (activeOutdoorNpc?.id === npc.id) outdoorDialogueIndex += 1;
+  else outdoorDialogueIndex = 0;
+  activeOutdoorNpc = npc;
+  const line = outdoorDialogueFor(npc, i18n.locale, outdoorDialogueIndex);
+  outdoorDialogueName.textContent = line.speaker;
+  outdoorDialogueText.textContent = line.text;
+  outdoorDialogue.classList.add('is-visible');
+  outdoorDialogue.setAttribute('aria-hidden', 'false');
+  viewport.dataset.outdoorDialogueOpen = 'true';
+  viewport.dataset.outdoorDialogueNpc = npc.id;
+  viewport.dataset.outdoorDialogueIndex = String(line.index);
+}
+
+function updateOutdoorMode(dt) {
+  outdoorWorld?.setPlayerTransform(outdoorPlayer);
+  outdoorWorld?.update(dt, clock.elapsedTime, outdoorPlayer);
+  outdoorCameraTarget.set(outdoorPlayer.x, 2.15, outdoorPlayer.z);
+  outdoorCameraPosition.set(outdoorPlayer.x + 7.6, 4.15, outdoorPlayer.z + 9.4);
+  camera.position.lerp(outdoorCameraPosition, 1 - Math.exp(-dt * 4.2));
+  controls.target.lerp(outdoorCameraTarget, 1 - Math.exp(-dt * 6));
+  camera.lookAt(controls.target);
+
+  nearbyOutdoorNpc = findNearbyOutdoorNpc(outdoorPlayer);
+  outdoorControls?.setTalkTarget(nearbyOutdoorNpc);
+  const locale = i18n.locale;
+  const hintPrefix = locale === 'ja-JP' ? 'E で話す：' : locale === 'en' ? 'E to talk: ' : '按 E 聊聊：';
+  outdoorNearbyHint.textContent = nearbyOutdoorNpc
+    ? `${hintPrefix}${nearbyOutdoorNpc.name[locale] ?? nearbyOutdoorNpc.name.en}`
+    : '';
+  outdoorNearbyHint.classList.toggle('is-visible', !!nearbyOutdoorNpc && !activeOutdoorNpc);
+  if (activeOutdoorNpc) {
+    const distance = Math.hypot(activeOutdoorNpc.x - outdoorPlayer.x, activeOutdoorNpc.z - outdoorPlayer.z);
+    if (distance > OUTDOOR_TALK_EXIT_DISTANCE) closeOutdoorDialogue();
+  }
+
+  viewport.dataset.outdoorX = outdoorPlayer.x.toFixed(3);
+  viewport.dataset.outdoorZ = outdoorPlayer.z.toFixed(3);
+  viewport.dataset.outdoorHeading = outdoorPlayer.heading.toFixed(3);
+  viewport.dataset.outdoorMoving = String(outdoorPlayer.moving);
+  viewport.dataset.outdoorBoundary = outdoorPlayer.boundaryAmount.toFixed(3);
+  viewport.dataset.outdoorNearbyNpc = nearbyOutdoorNpc?.id ?? '';
+}
+
+function setSceneMode(nextMode) {
+  const next = nextMode === 'outdoor' ? 'outdoor' : 'indoor';
+  if (next === sceneMode) return;
+  if (next === 'outdoor') {
+    outdoorWorld ??= createOutdoorScene(scene, params);
+    indoorCamera.position.copy(camera.position);
+    indoorCamera.target.copy(controls.target);
+    indoorVisibility.rug = rugLayer.group?.visible ?? rugState.enabled;
+    indoorVisibility.toys = toyWorld.group.visible;
+    indoorVisibility.rain = rainField.group.visible;
+    indoorVisibility.clouds = cloudField.group.visible;
+    ground.visible = false;
+    blockShadowPlane.visible = false;
+    hatchShadowPlane.visible = false;
+    rugLayer.setVisible(false);
+    toyWorld.group.visible = false;
+    rainField.group.visible = false;
+    cloudField.group.visible = false;
+    fishRain.setEnabled(false);
+    weatherAudio.setRain(false);
+    cat?.userData.containerObject && (cat.userData.containerObject.visible = false);
+    if (cat) cat.visible = false;
+    outdoorWorld.setVisible(true);
+    scene.background.set('#dcebd6');
+    scene.fog.near = 48;
+    scene.fog.far = 118;
+    controls.enabled = false;
+    speechBubbles.hide();
+    expressionOverlay.hide();
+    sceneMode = 'outdoor';
+  } else {
+    sceneMode = 'indoor';
+    outdoorWorld?.setVisible(false);
+    ground.visible = true;
+    blockShadowPlane.visible = true;
+    hatchShadowPlane.visible = true;
+    rugLayer.setVisible(rugState.enabled);
+    toyWorld.group.visible = indoorVisibility.toys ?? true;
+    cat?.userData.containerObject && (cat.userData.containerObject.visible = true);
+    if (cat) cat.visible = true;
+    camera.position.copy(indoorCamera.position);
+    controls.target.copy(indoorCamera.target);
+    controls.enabled = true;
+    scene.fog.near = 14;
+    scene.fog.far = 32;
+    closeOutdoorDialogue();
+    nearbyOutdoorNpc = null;
+    outdoorControls?.setTalkTarget(null);
+    syncWeatherLayers();
+  }
+  outdoorControls?.setMode(sceneMode);
+  viewport.dataset.sceneMode = sceneMode;
+  viewport.dataset.outdoorNpcCount = String(outdoorWorld?.getNpcCount() ?? 0);
+  resize();
+}
+
+outdoorControls = createOutdoorControls({
+  root: document.getElementById('outdoor-mobile-controls'),
+  toggleButton: document.getElementById('outdoor-mode-toggle'),
+  talkButton: document.getElementById('outdoor-talk-button'),
+  onModeChange: setSceneMode,
+  onTalk: showOutdoorDialogue,
+});
+window.__outdoorControls = outdoorControls;
+viewport.dataset.testMuted = String(testMuted);
+viewport.dataset.sceneMode = sceneMode;
+window.addEventListener('meow:localechange', () => {
+  if (activeOutdoorNpc) {
+    outdoorDialogueIndex -= 1;
+    showOutdoorDialogue(activeOutdoorNpc);
+  }
+});
+window.__setSceneMode = setSceneMode;
+window.__getOutdoorWalk = () => ({
+  mode: sceneMode,
+  player: { ...outdoorPlayer },
+  nearbyNpc: nearbyOutdoorNpc?.id ?? null,
+  dialogueNpc: activeOutdoorNpc?.id ?? null,
+  npcCount: outdoorWorld?.getNpcCount() ?? 0,
+  mobileControls: viewport.dataset.outdoorMobileControls === 'true',
+  testMuted,
+});
+window.__setOutdoorPosition = (x, z) => {
+  outdoorPlayer.x = Number(x) || 0;
+  outdoorPlayer.z = Number(z) || 0;
+  return window.__getOutdoorWalk();
+};
+window.__bgm = bgm;
 
 // ---------------------------------------------------------------- 随机与导出
 function randomizeAll() {
