@@ -1036,7 +1036,8 @@ select {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 .camera-toast { position: absolute; z-index: 30; left: 50%; bottom: 24px; transform: translate(-50%, 12px); padding: 10px 16px; border: 2px solid #5d493a; border-radius: 999px; color: #5d493a; background: #fff4cf; box-shadow: 0 4px 0 rgba(93,73,58,.18); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 160ms ease, transform 160ms ease; font-size: 13px; font-weight: 800; white-space: nowrap; }
 .camera-toast.is-visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); }

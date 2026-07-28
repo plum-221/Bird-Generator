@@ -2820,6 +2820,11 @@ function handleCameraButton(event) {
 }
 document.getElementById('btn-export-png').addEventListener('pointerup', handleCameraButton);
 document.getElementById('btn-export-png').addEventListener('click', handleCameraButton);
+document.addEventListener('pointerdown', (event) => {
+  const cameraButton = event.target.closest?.('#btn-export-png');
+  if (!cameraButton) return;
+  handleCameraButton(event);
+}, { capture: true, passive: false });
 
 createCodexPetPreview({
   trigger: document.getElementById('btn-codex-pet'),
