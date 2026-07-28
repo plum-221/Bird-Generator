@@ -2828,6 +2828,8 @@ const mobilePanelResizeMedia = window.matchMedia('(max-width: 768px)');
 let activeMobileSection = 0;
 let mobilePanelCollapsed = mobilePanelMedia.matches;
 let suppressMobilePanelToggle = false;
+let mobilePanelResizeFrame = 0;
+let mobilePanelPendingHeight = null;
 const mobilePanelResize = {
   pointerId: -1,
   startY: 0,
@@ -2908,7 +2910,13 @@ window.addEventListener('pointermove', (event) => {
     minHeight,
     maxHeight
   );
-  mobilePanel.style.setProperty('--mobile-panel-height', `${Math.round(height)}px`);
+  mobilePanelPendingHeight = Math.round(height);
+  if (!mobilePanelResizeFrame) {
+    mobilePanelResizeFrame = requestAnimationFrame(() => {
+      mobilePanelResizeFrame = 0;
+      if (mobilePanelPendingHeight != null) mobilePanel.style.setProperty('--mobile-panel-height', `${mobilePanelPendingHeight}px`);
+    });
+  }
   event.preventDefault();
 });
 
@@ -2918,6 +2926,9 @@ function finishMobilePanelResize(event, cancelled = false) {
   mobilePanelResize.pointerId = -1;
   mobilePanelResize.dragged = false;
   mobilePanel.classList.remove('mobile-panel-resizing');
+  if (mobilePanelResizeFrame) cancelAnimationFrame(mobilePanelResizeFrame);
+  mobilePanelResizeFrame = 0;
+  mobilePanelPendingHeight = null;
 }
 
 window.addEventListener('pointerup', (event) => finishMobilePanelResize(event), { capture: true });
