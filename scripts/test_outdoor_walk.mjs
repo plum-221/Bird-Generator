@@ -7,16 +7,18 @@ import {
   advanceOutdoorBuild,
   applyOutdoorBoundary,
   createOutdoorFarmState,
+  createOutdoorTerrainHeightfield,
   findNearbyOutdoorNpc,
   interactOutdoorFarm,
   isOutdoorTestMuted,
   moveOutdoorPlayer,
   normalizeOutdoorInput,
   outdoorCropStage,
-  outdoorDialogueFor,
+  outdoorBubbleFor,
   outdoorHouseColliders,
   outdoorTerrainHeight,
   resolveOutdoorCollisions,
+  sampleOutdoorTerrainHeightfield,
   shouldShowMobileOutdoorControls,
   stepOutdoorCharacter,
 } from '../src/outdoorWalkModel.js';
@@ -47,6 +49,14 @@ const cameraMoved = moveOutdoorPlayer(
 assert.ok(cameraMoved.x > 0.49 && Math.abs(cameraMoved.z) < 1e-6, 'forward movement must follow the rotated camera');
 
 assert.notEqual(outdoorTerrainHeight(0, 0), outdoorTerrainHeight(20, 20), 'outdoor terrain must not be flat');
+const heightfield = createOutdoorTerrainHeightfield({ size: 24, segments: 12 });
+assert.equal(heightfield.heights.length, 169, 'heightfield must include internal grid vertices');
+assert.ok(new Set([...heightfield.heights].map((height) => height.toFixed(3))).size > 8, 'heightfield must preserve rolling terrain');
+const exactX = heightfield.origin + heightfield.cellSize * 4;
+const exactZ = heightfield.origin + heightfield.cellSize * 7;
+assert.ok(Math.abs(
+  sampleOutdoorTerrainHeightfield(heightfield, exactX, exactZ) - outdoorTerrainHeight(exactX, exactZ)
+) < 1e-5, 'heightfield samples must match source heights at grid vertices');
 assert.equal(OUTDOOR_TREES.length, 54, 'tree layout must expose every physical tree');
 const tree = OUTDOOR_TREES[0];
 const blocked = resolveOutdoorCollisions({ x: tree.x, z: tree.z }, { circles: [tree] });
@@ -61,6 +71,11 @@ let jumper = stepOutdoorCharacter({ x: 0, z: 0, y: outdoorTerrainHeight(0, 0), g
 assert.ok(jumper.y > jumper.groundY && jumper.verticalVelocity > 0 && !jumper.grounded, 'jump must leave the terrain');
 for (let i = 0; i < 40; i += 1) jumper = stepOutdoorCharacter(jumper, {}, 0.05);
 assert.equal(jumper.grounded, true, 'gravity must land the player back on terrain');
+let raisedGround = { ...jumper, y: 5, groundY: 3, verticalVelocity: -1, grounded: false };
+for (let i = 0; i < 120 && !raisedGround.grounded; i += 1) {
+  raisedGround = stepOutdoorCharacter(raisedGround, {}, 1 / 60, { groundHeight: () => 3 });
+}
+assert.equal(raisedGround.y, 3, 'character must land on the injected heightfield collider');
 
 let farm = createOutdoorFarmState(0);
 farm = interactOutdoorFarm(farm, 0, 2);
@@ -97,10 +112,9 @@ const nearNpc = findNearbyOutdoorNpc({ x: firstNpc.x + 1, z: firstNpc.z }, OUTDO
 assert.equal(nearNpc?.id, firstNpc.id, 'nearby lookup must return the closest talkable bird');
 assert.equal(findNearbyOutdoorNpc({ x: 999, z: 999 }, OUTDOOR_NPCS, 2.8), null, 'far players must not receive a talk target');
 
-assert.equal(outdoorDialogueFor(firstNpc, 'zh-CN', 0).speaker, firstNpc.name['zh-CN']);
-assert.equal(outdoorDialogueFor(firstNpc, 'en', 99).text, firstNpc.lines.en[99 % firstNpc.lines.en.length]);
-assert.equal(outdoorDialogueFor(firstNpc, 'fr', 1).speaker, firstNpc.name.en, 'unsupported locales must fall back to English');
-assert.equal(outdoorDialogueFor(firstNpc, 'zh-CN', 2).isLast, true, 'dialogue must expose its final line so the UI can close');
+assert.equal(outdoorBubbleFor(firstNpc, 'zh-CN', 0).speaker, firstNpc.name['zh-CN']);
+assert.equal(outdoorBubbleFor(firstNpc, 'en', 99).text, firstNpc.lines.en[99 % firstNpc.lines.en.length]);
+assert.equal(outdoorBubbleFor(firstNpc, 'fr', 1).speaker, firstNpc.name.en, 'unsupported locales must fall back to English');
 
 assert.equal(isOutdoorTestMuted('?test-muted=1'), true);
 assert.equal(isOutdoorTestMuted('?e2e=1'), true);

@@ -8,13 +8,12 @@ const KEY_DIRECTIONS = new Map([
 ]);
 
 export function createOutdoorControls({
-  root, actionRoot, toggleButton, talkButton,
-  onModeChange, onTalk, onJump, onEmote, onInteract, onBuild, onToy,
+  root, actionRoot, toggleButton,
+  onModeChange, onJump, onEmote, onInteract, onBuild, onToy,
 }) {
   const pressed = new Set();
   const pointerDirections = new Map();
   let mode = 'indoor';
-  let talkTarget = null;
 
   const isEditable = (target) => target instanceof Element
     && !!target.closest('input, select, textarea, button, [contenteditable="true"]');
@@ -46,14 +45,6 @@ export function createOutdoorControls({
     refreshMobileVisibility();
   }
 
-  function setTalkTarget(target) {
-    talkTarget = target;
-    if (talkButton) {
-      talkButton.disabled = !target;
-      talkButton.classList.toggle('is-ready', !!target);
-    }
-  }
-
   function keyDown(event) {
     if (mode !== 'outdoor' || isEditable(event.target)) return;
     const direction = KEY_DIRECTIONS.get(event.code);
@@ -62,9 +53,6 @@ export function createOutdoorControls({
       event.preventDefault();
     } else if (event.repeat) {
       return;
-    } else if ((event.code === 'KeyE' || event.code === 'Enter') && talkTarget) {
-      onTalk?.(talkTarget);
-      event.preventDefault();
     } else if (event.code === 'Space') {
       onJump?.();
       event.preventDefault();
@@ -109,7 +97,6 @@ export function createOutdoorControls({
   }
 
   toggleButton?.addEventListener('click', () => onModeChange?.(mode === 'outdoor' ? 'indoor' : 'outdoor'));
-  talkButton?.addEventListener('click', () => talkTarget && onTalk?.(talkTarget));
   document.getElementById('outdoor-jump-button')?.addEventListener('click', () => onJump?.());
   document.getElementById('outdoor-emote-button')?.addEventListener('click', () => onEmote?.());
   document.getElementById('outdoor-interact-button')?.addEventListener('click', () => onInteract?.());
@@ -125,7 +112,6 @@ export function createOutdoorControls({
   return {
     getInput: () => Object.fromEntries([...pressed].map((key) => [key, true])),
     setMode,
-    setTalkTarget,
     getMode: () => mode,
   };
 }

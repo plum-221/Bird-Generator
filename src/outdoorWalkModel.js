@@ -5,6 +5,8 @@ export const OUTDOOR_TALK_EXIT_DISTANCE = 4.2;
 export const OUTDOOR_PLAYER_RADIUS = 0.46;
 export const OUTDOOR_JUMP_SPEED = 6.2;
 export const OUTDOOR_GRAVITY = 15.5;
+export const OUTDOOR_TERRAIN_SIZE = 132;
+export const OUTDOOR_TERRAIN_SEGMENTS = 96;
 export const OUTDOOR_GARDEN_CENTER = Object.freeze({ x: 13, z: 7 });
 export const OUTDOOR_HOUSE_CENTER = Object.freeze({ x: -17, z: 9 });
 export const OUTDOOR_BUILD_STAGES = Object.freeze(['empty', 'foundation', 'frame', 'walls', 'roof']);
@@ -30,6 +32,46 @@ export function outdoorTerrainHeight(x, z) {
   let height = gardenHeight + (base - gardenHeight) * gardenBlend;
   height = houseHeight + (height - houseHeight) * houseBlend;
   return height;
+}
+
+export function createOutdoorTerrainHeightfield({
+  size = OUTDOOR_TERRAIN_SIZE,
+  segments = OUTDOOR_TERRAIN_SEGMENTS,
+} = {}) {
+  const safeSegments = Math.max(2, Math.floor(segments));
+  const safeSize = Math.max(1, Number(size) || OUTDOOR_TERRAIN_SIZE);
+  const stride = safeSegments + 1;
+  const cellSize = safeSize / safeSegments;
+  const origin = -safeSize * 0.5;
+  const heights = new Float32Array(stride * stride);
+  for (let zIndex = 0; zIndex < stride; zIndex += 1) {
+    for (let xIndex = 0; xIndex < stride; xIndex += 1) {
+      heights[zIndex * stride + xIndex] = outdoorTerrainHeight(
+        origin + xIndex * cellSize,
+        origin + zIndex * cellSize
+      );
+    }
+  }
+  return { size: safeSize, segments: safeSegments, stride, cellSize, origin, heights };
+}
+
+export function sampleOutdoorTerrainHeightfield(field, x, z) {
+  if (!field?.heights || !field.stride) return outdoorTerrainHeight(x, z);
+  const gridX = Math.max(0, Math.min(field.segments, (x - field.origin) / field.cellSize));
+  const gridZ = Math.max(0, Math.min(field.segments, (z - field.origin) / field.cellSize));
+  const x0 = Math.min(field.segments - 1, Math.floor(gridX));
+  const z0 = Math.min(field.segments - 1, Math.floor(gridZ));
+  const tx = gridX - x0;
+  const tz = gridZ - z0;
+  const row0 = z0 * field.stride;
+  const row1 = (z0 + 1) * field.stride;
+  const h00 = field.heights[row0 + x0];
+  const h10 = field.heights[row0 + x0 + 1];
+  const h01 = field.heights[row1 + x0];
+  const h11 = field.heights[row1 + x0 + 1];
+  const near = h00 + (h10 - h00) * tx;
+  const far = h01 + (h11 - h01) * tx;
+  return near + (far - near) * tz;
 }
 
 export function createOutdoorTreeLayout(count = 54, seed = 2210728) {
@@ -239,7 +281,7 @@ export function moveOutdoorPlayer(
 export function stepOutdoorCharacter(state, input, dt, options = {}) {
   const moved = moveOutdoorPlayer(state, input, dt, options);
   const safeDt = Math.max(0, Math.min(Number(dt) || 0, 0.1));
-  const groundY = outdoorTerrainHeight(moved.x, moved.z);
+  const groundY = (options.groundHeight ?? outdoorTerrainHeight)(moved.x, moved.z);
   let verticalVelocity = Number(state?.verticalVelocity) || 0;
   let y = Number.isFinite(state?.y) ? state.y : groundY;
   let grounded = y <= groundY + 1e-4;
@@ -301,7 +343,7 @@ export function findNearbyOutdoorNpc(position, npcs = OUTDOOR_NPCS, maxDistance 
   return closest ? { ...closest, distance: closestDistance } : null;
 }
 
-export function outdoorDialogueFor(npcData, locale = 'zh-CN', index = 0) {
+export function outdoorBubbleFor(npcData, locale = 'zh-CN', index = 0) {
   if (!npcData) return { speaker: '', text: '', index: 0 };
   const language = npcData.lines[locale] ? locale : 'en';
   const lines = npcData.lines[language];
@@ -310,8 +352,6 @@ export function outdoorDialogueFor(npcData, locale = 'zh-CN', index = 0) {
     speaker: npcData.name[language] ?? npcData.name.en,
     text: lines[normalizedIndex],
     index: normalizedIndex,
-    total: lines.length,
-    isLast: normalizedIndex === lines.length - 1,
   };
 }
 

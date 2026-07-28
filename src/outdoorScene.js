@@ -5,14 +5,17 @@ import {
   OUTDOOR_HOUSE_CENTER,
   OUTDOOR_NPCS,
   OUTDOOR_TREES,
+  createOutdoorTerrainHeightfield,
   outdoorCropStage,
-  outdoorTerrainHeight,
+  sampleOutdoorTerrainHeightfield,
 } from './outdoorWalkModel.js';
 
 const backgroundUrl = new URL('./assets/outdoor/distant-meadow-v1.webp', import.meta.url).href;
 const treeAtlasUrl = new URL('./assets/outdoor/storybook-tree-atlas-v1.webp', import.meta.url).href;
 const materialAtlasUrl = new URL('./assets/outdoor/storybook-material-atlas-v1.webp', import.meta.url).href;
 const ink = '#604d3c';
+const terrainHeightfield = createOutdoorTerrainHeightfield();
+const terrainGroundHeight = (x, z) => sampleOutdoorTerrainHeightfield(terrainHeightfield, x, z);
 
 function seeded(seed) {
   let value = seed >>> 0;
@@ -87,14 +90,32 @@ function outlined(geometry, material, name, scale = 1.035) {
   return group;
 }
 
-function terrainCircle(radius = 78, segments = 128) {
-  const geometry = new THREE.CircleGeometry(radius, segments);
-  geometry.rotateX(-Math.PI / 2);
-  const positions = geometry.attributes.position;
-  for (let i = 0; i < positions.count; i += 1) {
-    positions.setY(i, outdoorTerrainHeight(positions.getX(i), positions.getZ(i)));
+function terrainGeometry(field = terrainHeightfield) {
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+  for (let zIndex = 0; zIndex < field.stride; zIndex += 1) {
+    for (let xIndex = 0; xIndex < field.stride; xIndex += 1) {
+      const index = zIndex * field.stride + xIndex;
+      positions.push(
+        field.origin + xIndex * field.cellSize,
+        field.heights[index],
+        field.origin + zIndex * field.cellSize
+      );
+      uvs.push(xIndex / field.segments, zIndex / field.segments);
+      if (xIndex < field.segments && zIndex < field.segments) {
+        const a = index;
+        const b = index + 1;
+        const c = index + field.stride;
+        const d = c + 1;
+        indices.push(a, c, b, b, c, d);
+      }
+    }
   }
-  positions.needsUpdate = true;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
 }
@@ -113,7 +134,7 @@ function ribbon(points, width, color) {
     for (const side of [1, -1]) {
       const x = points[i].x + nx * side;
       const z = points[i].z + nz * side;
-      positions.push(x, outdoorTerrainHeight(x, z) + 0.045, z);
+      positions.push(x, terrainGroundHeight(x, z) + 0.045, z);
     }
     if (i < points.length - 1) {
       const a = i * 2;
@@ -132,26 +153,68 @@ function sampledCurve(coords, divisions = 80) {
   return curve.getPoints(divisions);
 }
 
+function grassTuftGeometry() {
+  const geometry = new THREE.BufferGeometry();
+  const positions = [];
+  const indices = [];
+  const blades = [
+    { angle: 0.05, x: 0, z: 0, height: 0.48, width: 0.034, bend: 0.13 },
+    { angle: 0.72, x: 0.06, z: -0.03, height: 0.39, width: 0.03, bend: -0.11 },
+    { angle: 1.38, x: 0.08, z: 0.04, height: 0.55, width: 0.032, bend: 0.15 },
+    { angle: 2.04, x: -0.04, z: 0.06, height: 0.43, width: 0.03, bend: -0.1 },
+    { angle: 2.7, x: -0.08, z: 0.02, height: 0.51, width: 0.034, bend: 0.12 },
+    { angle: 3.36, x: -0.05, z: -0.06, height: 0.37, width: 0.028, bend: -0.08 },
+    { angle: 4.02, x: 0.02, z: -0.08, height: 0.47, width: 0.032, bend: 0.1 },
+    { angle: 4.68, x: 0.08, z: -0.02, height: 0.42, width: 0.03, bend: -0.12 },
+    { angle: 5.34, x: 0.03, z: 0.05, height: 0.52, width: 0.034, bend: 0.14 },
+  ];
+  for (const blade of blades) {
+    const base = positions.length / 3;
+    const rightX = Math.cos(blade.angle);
+    const rightZ = -Math.sin(blade.angle);
+    const bendX = Math.sin(blade.angle);
+    const bendZ = Math.cos(blade.angle);
+    for (let segment = 0; segment <= 4; segment += 1) {
+      const t = segment / 4;
+      const curve = blade.bend * t * t;
+      const width = blade.width * (1 - t * 0.72) + 0.008;
+      const centerX = blade.x + bendX * curve;
+      const centerZ = blade.z + bendZ * curve;
+      positions.push(centerX - rightX * width, blade.height * t, centerZ - rightZ * width);
+      positions.push(centerX + rightX * width, blade.height * t, centerZ + rightZ * width);
+      if (segment < 4) {
+        const row = base + segment * 2;
+        indices.push(row, row + 2, row + 1, row + 1, row + 2, row + 3);
+      }
+    }
+  }
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function addGrass(group) {
   const rand = seeded(99117);
-  const blade = new THREE.ConeGeometry(0.13, 0.62, 3);
-  blade.translate(0, 0.31, 0);
+  const tuft = grassTuftGeometry();
   const colors = ['#769b58', '#8eae69', '#abc47a'];
   for (const color of colors) {
-    const mesh = new THREE.InstancedMesh(blade, toon(color), 240);
+    const material = new THREE.MeshToonMaterial({ color, gradientMap: gradient, side: THREE.DoubleSide });
+    const mesh = new THREE.InstancedMesh(tuft, material, 200);
+    mesh.name = 'outdoorFineGrassTufts';
     const transform = new THREE.Object3D();
     let written = 0;
-    while (written < 240) {
+    while (written < 200) {
       const angle = rand() * Math.PI * 2;
-      const radius = 3.5 + Math.sqrt(rand()) * 52;
+      const radius = 3.5 + Math.sqrt(rand()) * 55;
       const x = Math.cos(angle) * radius;
       const z = Math.sin(angle) * radius;
       if (Math.hypot(x - OUTDOOR_GARDEN_CENTER.x, z - OUTDOOR_GARDEN_CENTER.z) < 6) continue;
       if (Math.hypot(x - OUTDOOR_HOUSE_CENTER.x, z - OUTDOOR_HOUSE_CENTER.z) < 7) continue;
-      transform.position.set(x, outdoorTerrainHeight(x, z), z);
+      transform.position.set(x, terrainGroundHeight(x, z), z);
       transform.rotation.y = rand() * Math.PI;
-      const scale = 0.55 + rand() * 0.9;
-      transform.scale.set(scale * (0.7 + rand() * 0.45), scale, scale);
+      const scale = 0.62 + rand() * 0.78;
+      transform.scale.set(scale * (0.85 + rand() * 0.3), scale, scale);
       transform.updateMatrix();
       mesh.setMatrixAt(written, transform.matrix);
       written += 1;
@@ -170,12 +233,13 @@ function addTrees(group) {
   const transform = new THREE.Object3D();
   for (let i = 0; i < OUTDOOR_TREES.length; i += 1) {
     const tree = OUTDOOR_TREES[i];
-    transform.position.set(tree.x, tree.y + 1.25 * tree.scale, tree.z);
+    const groundY = terrainGroundHeight(tree.x, tree.z);
+    transform.position.set(tree.x, groundY + 1.25 * tree.scale, tree.z);
     transform.rotation.y = (i * 2.17) % Math.PI;
     transform.scale.setScalar(tree.scale);
     transform.updateMatrix();
     trunks.setMatrixAt(i, transform.matrix);
-    transform.position.y = tree.y + 3.35 * tree.scale;
+    transform.position.y = groundY + 3.35 * tree.scale;
     transform.scale.set(tree.scale * 1.28, tree.scale * 1.02, tree.scale * 1.16);
     transform.updateMatrix();
     crowns.setMatrixAt(i, transform.matrix);
@@ -199,7 +263,7 @@ function addTrees(group) {
       for (const rotationY of [0, Math.PI / 2]) {
         const sprites = new THREE.InstancedMesh(new THREE.PlaneGeometry(4.7, 6.2), material, trees.length);
         trees.forEach((tree, index) => {
-          transform.position.set(tree.x, tree.y + 3.05 * tree.scale, tree.z);
+          transform.position.set(tree.x, terrainGroundHeight(tree.x, tree.z) + 3.05 * tree.scale, tree.z);
           transform.rotation.set(0, rotationY, 0);
           transform.scale.setScalar(tree.scale);
           transform.updateMatrix();
@@ -215,7 +279,7 @@ function addTrees(group) {
 function createGarden(group) {
   const garden = new THREE.Group();
   garden.name = 'outdoorGarden';
-  garden.position.set(OUTDOOR_GARDEN_CENTER.x, outdoorTerrainHeight(OUTDOOR_GARDEN_CENTER.x, OUTDOOR_GARDEN_CENTER.z) + 0.05, OUTDOOR_GARDEN_CENTER.z);
+  garden.position.set(OUTDOOR_GARDEN_CENTER.x, terrainGroundHeight(OUTDOOR_GARDEN_CENTER.x, OUTDOOR_GARDEN_CENTER.z) + 0.05, OUTDOOR_GARDEN_CENTER.z);
   const bedGeometry = new THREE.BoxGeometry(1.7, 0.24, 2.1);
   const soilGeometry = new THREE.BoxGeometry(1.46, 0.13, 1.84);
   const cropGeometry = new THREE.ConeGeometry(0.18, 0.62, 5);
@@ -250,7 +314,7 @@ function createGarden(group) {
 function createHouse(group) {
   const house = new THREE.Group();
   house.name = 'outdoorHouse';
-  house.position.set(OUTDOOR_HOUSE_CENTER.x, outdoorTerrainHeight(OUTDOOR_HOUSE_CENTER.x, OUTDOOR_HOUSE_CENTER.z), OUTDOOR_HOUSE_CENTER.z);
+  house.position.set(OUTDOOR_HOUSE_CENTER.x, terrainGroundHeight(OUTDOOR_HOUSE_CENTER.x, OUTDOOR_HOUSE_CENTER.z), OUTDOOR_HOUSE_CENTER.z);
   const stages = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
   stages.forEach((stage, index) => { stage.name = `houseStage-${index + 1}`; house.add(stage); });
 
@@ -325,7 +389,9 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
   group.name = 'outdoorWalkWorld';
   group.visible = false;
 
-  const ground = new THREE.Mesh(terrainCircle(), atlasToon('#a9c77d', '0-0', 12));
+  const ground = new THREE.Mesh(terrainGeometry(), atlasToon('#a9c77d', '0-0', 12));
+  ground.name = 'outdoorTerrainHeightfieldCollider';
+  ground.userData.collider = { type: 'heightfield', field: terrainHeightfield };
   ground.receiveShadow = true;
   group.add(ground);
 
@@ -336,7 +402,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
   group.add(mainPath, stream);
 
   const bridge = new THREE.Group();
-  const bridgeY = outdoorTerrainHeight(0, -11.8) + 0.22;
+  const bridgeY = terrainGroundHeight(0, -11.8) + 0.22;
   for (let i = -4; i <= 4; i += 1) {
     const plank = outlined(new THREE.BoxGeometry(0.75, 0.13, 3.7), toon(i % 2 ? '#a97d58' : '#bc9068'), 'bridgePlank', 1.025);
     plank.position.set(i * 0.72, bridgeY + Math.cos(i * 0.32) * 0.08, -11.8);
@@ -385,7 +451,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
       model = independentModels[index - 8].clone(true);
     }
     model.name = `outdoorNpc-${npc.id}`;
-    model.position.set(npc.x, outdoorTerrainHeight(npc.x, npc.z), npc.z);
+    model.position.set(npc.x, terrainGroundHeight(npc.x, npc.z), npc.z);
     model.rotation.y = npc.heading ?? 0;
     model.scale.setScalar((npc.scale ?? 0.72) * (index >= 8 ? 0.9 + index * 0.018 : 1));
     model.userData.outdoorNpcId = npc.id;
@@ -461,7 +527,7 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
       outdoorToy.add(clone);
       outdoorToy.position.set(
         playerPosition.x + Math.sin(playerPosition.heading) * 1.2,
-        outdoorTerrainHeight(playerPosition.x, playerPosition.z) + 0.2,
+        terrainGroundHeight(playerPosition.x, playerPosition.z) + 0.2,
         playerPosition.z + Math.cos(playerPosition.heading) * 1.2
       );
       outdoorToy.visible = true;
@@ -469,6 +535,9 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
     getNpcObject(id) { return npcById.get(id) ?? null; },
     getNpcCount() { return npcById.size; },
     getIndependentNpcCount() { return 8; },
+    getGroundHeight(x, z) { return terrainGroundHeight(x, z); },
+    getGroundCollider() { return ground.userData.collider; },
+    getGrassBladeCount() { return 3000; },
     setPlayerTransform(position) {
       player.position.x = position.x;
       player.position.z = position.z;

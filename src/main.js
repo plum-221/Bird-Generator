@@ -28,7 +28,7 @@ import {
   interactOutdoorFarm,
   isOutdoorTestMuted,
   outdoorCropStage,
-  outdoorDialogueFor,
+  outdoorBubbleFor,
   outdoorHouseColliders,
   outdoorTerrainHeight,
   stepOutdoorCharacter,
@@ -805,8 +805,9 @@ let outdoorWorld = null;
 let outdoorControls = null;
 let nearbyOutdoorNpc = null;
 let activeOutdoorNpc = null;
-let outdoorDialogueIndex = 0;
-let outdoorDialogueClosesAt = 0;
+let outdoorBubbleClosesAt = 0;
+let outdoorBubbleArmed = true;
+const outdoorBubbleLineByNpc = new Map();
 const outdoorSpawnY = outdoorTerrainHeight(0, 10);
 const outdoorPlayer = {
   x: 0, y: outdoorSpawnY, z: 10, groundY: outdoorSpawnY,
@@ -822,6 +823,7 @@ const indoorCamera = { position: new THREE.Vector3(), target: new THREE.Vector3(
 const outdoorCameraTarget = new THREE.Vector3();
 const outdoorCameraShift = new THREE.Vector3();
 const outdoorCameraForward = new THREE.Vector3();
+const outdoorBubbleAnchor = new THREE.Vector3();
 const indoorOrbitSettings = {};
 
 function triggerBirdInteraction(event) {
@@ -1471,6 +1473,7 @@ function stepSim(dt) {
       jump: outdoorJumpQueued,
       circles: OUTDOOR_TREES,
       boxes: outdoorHouseColliders(outdoorBuild.stage),
+      groundHeight: outdoorWorld?.getGroundHeight,
     });
     outdoorJumpQueued = false;
     const headingDelta = Math.atan2(
@@ -2802,10 +2805,9 @@ for (const [type, control] of Object.entries(weatherAmountControls)) {
 setWeather('sunny');
 
 // ---------------------------------------------------------------- 户外散步场景
-const outdoorDialogue = document.getElementById('outdoor-dialogue');
-const outdoorDialogueName = document.getElementById('outdoor-dialogue-name');
-const outdoorDialogueText = document.getElementById('outdoor-dialogue-text');
-const outdoorNearbyHint = document.getElementById('outdoor-nearby-hint');
+const outdoorNpcBubble = document.getElementById('outdoor-npc-bubble');
+const outdoorNpcBubbleName = document.getElementById('outdoor-npc-bubble-name');
+const outdoorNpcBubbleText = document.getElementById('outdoor-npc-bubble-text');
 const outdoorGameHud = document.getElementById('outdoor-game-hud');
 const outdoorFarmStatus = document.getElementById('outdoor-farm-status');
 const outdoorBuildStatus = document.getElementById('outdoor-build-status');
@@ -2897,34 +2899,41 @@ toyPackButton?.addEventListener('click', () => {
   syncOutdoorHud();
 });
 
-function closeOutdoorDialogue() {
+function closeOutdoorNpcBubble() {
   activeOutdoorNpc = null;
-  outdoorDialogueClosesAt = 0;
-  outdoorDialogue?.classList.remove('is-visible');
-  outdoorDialogue?.setAttribute('aria-hidden', 'true');
-  viewport.dataset.outdoorDialogueOpen = 'false';
+  outdoorBubbleClosesAt = 0;
+  outdoorNpcBubble?.classList.remove('is-visible');
+  outdoorNpcBubble?.setAttribute('aria-hidden', 'true');
+  viewport.dataset.outdoorNpcBubbleOpen = 'false';
 }
 
-function showOutdoorDialogue(npc = nearbyOutdoorNpc) {
+function showOutdoorNpcBubble(npc = nearbyOutdoorNpc) {
   if (!npc) return;
-  if (activeOutdoorNpc?.id === npc.id) {
-    const current = outdoorDialogueFor(npc, i18n.locale, outdoorDialogueIndex);
-    if (current.isLast) {
-      closeOutdoorDialogue();
-      return;
-    }
-    outdoorDialogueIndex += 1;
-  } else outdoorDialogueIndex = 0;
+  const lineIndex = outdoorBubbleLineByNpc.get(npc.id) ?? 0;
+  const line = outdoorBubbleFor(npc, i18n.locale, lineIndex);
+  outdoorBubbleLineByNpc.set(npc.id, lineIndex + 1);
   activeOutdoorNpc = npc;
-  const line = outdoorDialogueFor(npc, i18n.locale, outdoorDialogueIndex);
-  outdoorDialogueName.textContent = line.speaker;
-  outdoorDialogueText.textContent = line.text;
-  outdoorDialogue.classList.add('is-visible');
-  outdoorDialogue.setAttribute('aria-hidden', 'false');
-  viewport.dataset.outdoorDialogueOpen = 'true';
-  viewport.dataset.outdoorDialogueNpc = npc.id;
-  viewport.dataset.outdoorDialogueIndex = String(line.index);
-  outdoorDialogueClosesAt = petElapsed + 5;
+  outdoorNpcBubbleName.textContent = line.speaker;
+  outdoorNpcBubbleText.textContent = line.text;
+  outdoorNpcBubble.classList.add('is-visible');
+  outdoorNpcBubble.setAttribute('aria-hidden', 'false');
+  viewport.dataset.outdoorNpcBubbleOpen = 'true';
+  viewport.dataset.outdoorNpcBubbleNpc = npc.id;
+  viewport.dataset.outdoorNpcBubbleIndex = String(line.index);
+  outdoorBubbleClosesAt = petElapsed + 4.2;
+}
+
+function positionOutdoorNpcBubble() {
+  if (!activeOutdoorNpc || !outdoorNpcBubble) return;
+  const model = outdoorWorld?.getNpcObject(activeOutdoorNpc.id);
+  if (!model) return;
+  model.getWorldPosition(outdoorBubbleAnchor);
+  outdoorBubbleAnchor.y += 2.5 * (activeOutdoorNpc.scale ?? 0.75);
+  outdoorBubbleAnchor.project(camera);
+  const x = (outdoorBubbleAnchor.x * 0.5 + 0.5) * viewport.clientWidth;
+  const y = (-outdoorBubbleAnchor.y * 0.5 + 0.5) * viewport.clientHeight;
+  outdoorNpcBubble.style.left = `${THREE.MathUtils.clamp(x, 18, viewport.clientWidth - 18)}px`;
+  outdoorNpcBubble.style.top = `${THREE.MathUtils.clamp(y, 72, viewport.clientHeight - 24)}px`;
 }
 
 function updateOutdoorMode(dt) {
@@ -2936,16 +2945,15 @@ function updateOutdoorMode(dt) {
   camera.position.add(outdoorCameraShift);
 
   nearbyOutdoorNpc = findNearbyOutdoorNpc(outdoorPlayer);
-  outdoorControls?.setTalkTarget(nearbyOutdoorNpc);
-  const locale = i18n.locale;
-  const hintPrefix = locale === 'ja-JP' ? 'E で話す：' : locale === 'en' ? 'E to talk: ' : '按 E 聊聊：';
-  outdoorNearbyHint.textContent = nearbyOutdoorNpc
-    ? `${hintPrefix}${nearbyOutdoorNpc.name[locale] ?? nearbyOutdoorNpc.name.en}`
-    : '';
-  outdoorNearbyHint.classList.toggle('is-visible', !!nearbyOutdoorNpc && !activeOutdoorNpc);
+  if (!nearbyOutdoorNpc) outdoorBubbleArmed = true;
+  if (nearbyOutdoorNpc && (outdoorBubbleArmed || activeOutdoorNpc?.id !== nearbyOutdoorNpc.id)) {
+    outdoorBubbleArmed = false;
+    showOutdoorNpcBubble(nearbyOutdoorNpc);
+  }
   if (activeOutdoorNpc) {
     const distance = Math.hypot(activeOutdoorNpc.x - outdoorPlayer.x, activeOutdoorNpc.z - outdoorPlayer.z);
-    if (distance > OUTDOOR_TALK_EXIT_DISTANCE || (outdoorDialogueClosesAt && petElapsed >= outdoorDialogueClosesAt)) closeOutdoorDialogue();
+    if (distance > OUTDOOR_TALK_EXIT_DISTANCE || (outdoorBubbleClosesAt && petElapsed >= outdoorBubbleClosesAt)) closeOutdoorNpcBubble();
+    else positionOutdoorNpcBubble();
   }
   syncOutdoorHud();
 
@@ -3033,9 +3041,9 @@ function setSceneMode(nextMode) {
     scene.fog.near = 14;
     scene.fog.far = 32;
     outdoorGameHud.hidden = true;
-    closeOutdoorDialogue();
+    closeOutdoorNpcBubble();
+    outdoorBubbleArmed = true;
     nearbyOutdoorNpc = null;
-    outdoorControls?.setTalkTarget(null);
     syncWeatherLayers();
   }
   outdoorControls?.setMode(sceneMode);
@@ -3048,9 +3056,7 @@ outdoorControls = createOutdoorControls({
   root: document.getElementById('outdoor-mobile-controls'),
   actionRoot: document.getElementById('outdoor-action-controls'),
   toggleButton: document.getElementById('outdoor-mode-toggle'),
-  talkButton: document.getElementById('outdoor-talk-button'),
   onModeChange: setSceneMode,
-  onTalk: showOutdoorDialogue,
   onJump: () => { if (sceneMode === 'outdoor') outdoorJumpQueued = true; },
   onEmote: triggerOutdoorEmote,
   onInteract: performOutdoorFarmAction,
@@ -3062,8 +3068,10 @@ viewport.dataset.testMuted = String(testMuted);
 viewport.dataset.sceneMode = sceneMode;
 window.addEventListener('meow:localechange', () => {
   if (activeOutdoorNpc) {
-    outdoorDialogueIndex -= 1;
-    showOutdoorDialogue(activeOutdoorNpc);
+    const lineIndex = Math.max(0, (outdoorBubbleLineByNpc.get(activeOutdoorNpc.id) ?? 1) - 1);
+    const line = outdoorBubbleFor(activeOutdoorNpc, i18n.locale, lineIndex);
+    outdoorNpcBubbleName.textContent = line.speaker;
+    outdoorNpcBubbleText.textContent = line.text;
   }
 });
 window.__setSceneMode = setSceneMode;
@@ -3071,9 +3079,11 @@ window.__getOutdoorWalk = () => ({
   mode: sceneMode,
   player: { ...outdoorPlayer },
   nearbyNpc: nearbyOutdoorNpc?.id ?? null,
-  dialogueNpc: activeOutdoorNpc?.id ?? null,
+  bubbleNpc: activeOutdoorNpc?.id ?? null,
   npcCount: outdoorWorld?.getNpcCount() ?? 0,
   independentNpcCount: outdoorWorld?.getIndependentNpcCount() ?? 0,
+  groundCollider: outdoorWorld?.getGroundCollider()?.type ?? null,
+  grassBladeCount: outdoorWorld?.getGrassBladeCount() ?? 0,
   farm: structuredClone(outdoorFarm),
   build: { ...outdoorBuild },
   toy: { kind: selectedOutdoorToyKind, placed: outdoorToyPlaced },
