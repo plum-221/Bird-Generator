@@ -86,7 +86,7 @@ export function createOutdoorTreeLayout(count = 28, seed = 2210728) {
   const trees = [];
   while (trees.length < count) {
     const angle = rand() * Math.PI * 2;
-    const radius = 18 + rand() * 34;
+    const radius = 9 + rand() * 25;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
     if (Math.hypot(x - OUTDOOR_GARDEN_CENTER.x, z - OUTDOOR_GARDEN_CENTER.z) < 7) continue;
