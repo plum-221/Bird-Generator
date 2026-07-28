@@ -2795,7 +2795,8 @@ document.getElementById('btn-export-glb').addEventListener('click', () => {
   );
 });
 
-document.getElementById('btn-export-png').addEventListener('click', () => {
+document.getElementById('btn-export-png').addEventListener('pointerup', (event) => {
+  event.preventDefault();
   if (shareCardCapture.active) shareCardCapture.close();
   else shareCardCapture.open();
 });
