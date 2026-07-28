@@ -721,7 +721,12 @@ export function createShareCardCapture({
 
   function openAndCapture() {
     open();
-    requestAnimationFrame(() => { capture(); });
+    requestAnimationFrame(() => {
+      capture().catch((error) => {
+        console.error('Share card capture failed', error);
+        statusEl.textContent = localeCopy(getLocale()).saved;
+      });
+    });
   }
 
   async function capture() {

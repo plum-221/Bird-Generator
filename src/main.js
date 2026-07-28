@@ -2795,11 +2795,17 @@ document.getElementById('btn-export-glb').addEventListener('click', () => {
   );
 });
 
-document.getElementById('btn-export-png').addEventListener('pointerup', (event) => {
+let cameraButtonHandledAt = 0;
+function handleCameraButton(event) {
   event.preventDefault();
+  const now = performance.now();
+  if (now - cameraButtonHandledAt < 350) return;
+  cameraButtonHandledAt = now;
   if (shareCardCapture.active) shareCardCapture.close();
   else shareCardCapture.openAndCapture();
-});
+}
+document.getElementById('btn-export-png').addEventListener('pointerup', handleCameraButton);
+document.getElementById('btn-export-png').addEventListener('click', handleCameraButton);
 
 createCodexPetPreview({
   trigger: document.getElementById('btn-codex-pet'),
