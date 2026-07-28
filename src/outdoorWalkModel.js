@@ -2,6 +2,109 @@ export const OUTDOOR_WORLD_RADIUS = 56;
 export const OUTDOOR_SOFT_WALL = 4;
 export const OUTDOOR_TALK_DISTANCE = 2.8;
 export const OUTDOOR_TALK_EXIT_DISTANCE = 4.2;
+export const OUTDOOR_PLAYER_RADIUS = 0.46;
+export const OUTDOOR_JUMP_SPEED = 6.2;
+export const OUTDOOR_GRAVITY = 15.5;
+export const OUTDOOR_GARDEN_CENTER = Object.freeze({ x: 13, z: 7 });
+export const OUTDOOR_HOUSE_CENTER = Object.freeze({ x: -17, z: 9 });
+export const OUTDOOR_BUILD_STAGES = Object.freeze(['empty', 'foundation', 'frame', 'walls', 'roof']);
+
+const smoothstep = (edge0, edge1, value) => {
+  const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
+
+export function outdoorTerrainHeight(x, z) {
+  const base = Math.sin(x * 0.105) * 0.72
+    + Math.cos(z * 0.083) * 0.55
+    + Math.sin((x + z) * 0.048) * 0.68;
+  const flattenAround = (center, inner, outer) => smoothstep(inner, outer, Math.hypot(x - center.x, z - center.z));
+  const gardenBlend = flattenAround(OUTDOOR_GARDEN_CENTER, 3.8, 7.5);
+  const houseBlend = flattenAround(OUTDOOR_HOUSE_CENTER, 4.8, 8.5);
+  const gardenHeight = Math.sin(OUTDOOR_GARDEN_CENTER.x * 0.105) * 0.72
+    + Math.cos(OUTDOOR_GARDEN_CENTER.z * 0.083) * 0.55
+    + Math.sin((OUTDOOR_GARDEN_CENTER.x + OUTDOOR_GARDEN_CENTER.z) * 0.048) * 0.68;
+  const houseHeight = Math.sin(OUTDOOR_HOUSE_CENTER.x * 0.105) * 0.72
+    + Math.cos(OUTDOOR_HOUSE_CENTER.z * 0.083) * 0.55
+    + Math.sin((OUTDOOR_HOUSE_CENTER.x + OUTDOOR_HOUSE_CENTER.z) * 0.048) * 0.68;
+  let height = gardenHeight + (base - gardenHeight) * gardenBlend;
+  height = houseHeight + (height - houseHeight) * houseBlend;
+  return height;
+}
+
+export function createOutdoorTreeLayout(count = 54, seed = 2210728) {
+  let value = seed >>> 0;
+  const rand = () => {
+    value += 0x6d2b79f5;
+    let n = value;
+    n = Math.imul(n ^ (n >>> 15), n | 1);
+    n ^= n + Math.imul(n ^ (n >>> 7), n | 61);
+    return ((n ^ (n >>> 14)) >>> 0) / 4294967296;
+  };
+  const trees = [];
+  while (trees.length < count) {
+    const angle = rand() * Math.PI * 2;
+    const radius = 18 + rand() * 34;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    if (Math.hypot(x - OUTDOOR_GARDEN_CENTER.x, z - OUTDOOR_GARDEN_CENTER.z) < 7) continue;
+    if (Math.hypot(x - OUTDOOR_HOUSE_CENTER.x, z - OUTDOOR_HOUSE_CENTER.z) < 8) continue;
+    const scale = 0.78 + rand() * 1.05;
+    trees.push({ id: `tree-${trees.length}`, x, z, y: outdoorTerrainHeight(x, z), scale, radius: 0.38 * scale, variant: trees.length % 3 });
+  }
+  return trees;
+}
+
+export const OUTDOOR_TREES = Object.freeze(createOutdoorTreeLayout());
+
+function resolveCircle(position, playerRadius, collider) {
+  const dx = position.x - collider.x;
+  const dz = position.z - collider.z;
+  const minimum = playerRadius + collider.radius;
+  const distance = Math.hypot(dx, dz);
+  if (distance >= minimum) return position;
+  const nx = distance > 1e-6 ? dx / distance : 1;
+  const nz = distance > 1e-6 ? dz / distance : 0;
+  return { ...position, x: collider.x + nx * minimum, z: collider.z + nz * minimum };
+}
+
+function resolveBox(position, playerRadius, box) {
+  const minX = box.x - box.halfX - playerRadius;
+  const maxX = box.x + box.halfX + playerRadius;
+  const minZ = box.z - box.halfZ - playerRadius;
+  const maxZ = box.z + box.halfZ + playerRadius;
+  if (position.x <= minX || position.x >= maxX || position.z <= minZ || position.z >= maxZ) return position;
+  const distances = [
+    { key: 'x', value: minX, distance: position.x - minX },
+    { key: 'x', value: maxX, distance: maxX - position.x },
+    { key: 'z', value: minZ, distance: position.z - minZ },
+    { key: 'z', value: maxZ, distance: maxZ - position.z },
+  ].sort((a, b) => a.distance - b.distance);
+  return { ...position, [distances[0].key]: distances[0].value };
+}
+
+export function outdoorHouseColliders(stage = 0) {
+  if (stage < 3) return [];
+  const { x, z } = OUTDOOR_HOUSE_CENTER;
+  return [
+    { type: 'box', x: x - 2.8, z, halfX: 0.16, halfZ: 2.5 },
+    { type: 'box', x: x + 2.8, z, halfX: 0.16, halfZ: 2.5 },
+    { type: 'box', x, z: z - 2.5, halfX: 2.8, halfZ: 0.16 },
+    { type: 'box', x: x - 1.9, z: z + 2.5, halfX: 0.9, halfZ: 0.16 },
+    { type: 'box', x: x + 1.9, z: z + 2.5, halfX: 0.9, halfZ: 0.16 },
+  ];
+}
+
+export function resolveOutdoorCollisions(position, {
+  playerRadius = OUTDOOR_PLAYER_RADIUS,
+  circles = OUTDOOR_TREES,
+  boxes = [],
+} = {}) {
+  let resolved = { ...position };
+  for (const collider of circles) resolved = resolveCircle(resolved, playerRadius, collider);
+  for (const collider of boxes) resolved = resolveBox(resolved, playerRadius, collider);
+  return resolved;
+}
 
 const npc = (id, coatId, x, z, scale, name, lines) => ({
   id, coatId, x, z, scale, name, lines,
@@ -108,19 +211,82 @@ export function moveOutdoorPlayer(
   state,
   input,
   dt,
-  { speed = 5.2, radius = OUTDOOR_WORLD_RADIUS } = {}
+  { speed = 5.2, radius = OUTDOOR_WORLD_RADIUS, cameraHeading = 0, circles = [], boxes = [] } = {}
 ) {
-  const direction = normalizeOutdoorInput(input);
+  const local = normalizeOutdoorInput(input);
+  const forwardX = Math.sin(cameraHeading);
+  const forwardZ = -Math.cos(cameraHeading);
+  const rightX = Math.cos(cameraHeading);
+  const rightZ = Math.sin(cameraHeading);
+  const direction = {
+    x: rightX * local.x + forwardX * -local.z,
+    z: rightZ * local.x + forwardZ * -local.z,
+  };
   const moving = direction.x !== 0 || direction.z !== 0;
   const safeDt = Math.max(0, Math.min(Number(dt) || 0, 0.1));
-  const next = applyOutdoorBoundary({
+  const candidate = applyOutdoorBoundary({
     x: (Number(state?.x) || 0) + direction.x * speed * safeDt,
     z: (Number(state?.z) || 0) + direction.z * speed * safeDt,
   }, radius);
+  const collided = resolveOutdoorCollisions(candidate, { circles, boxes });
+  const next = applyOutdoorBoundary(collided, radius);
   const targetHeading = moving
     ? Math.atan2(direction.x, direction.z)
     : Number(state?.heading) || 0;
   return { ...next, heading: targetHeading, moving, direction };
+}
+
+export function stepOutdoorCharacter(state, input, dt, options = {}) {
+  const moved = moveOutdoorPlayer(state, input, dt, options);
+  const safeDt = Math.max(0, Math.min(Number(dt) || 0, 0.1));
+  const groundY = outdoorTerrainHeight(moved.x, moved.z);
+  let verticalVelocity = Number(state?.verticalVelocity) || 0;
+  let y = Number.isFinite(state?.y) ? state.y : groundY;
+  let grounded = y <= groundY + 1e-4;
+  if (options.jump && grounded) {
+    verticalVelocity = OUTDOOR_JUMP_SPEED;
+    grounded = false;
+  }
+  if (!grounded) {
+    verticalVelocity -= OUTDOOR_GRAVITY * safeDt;
+    y += verticalVelocity * safeDt;
+  }
+  if (y <= groundY) {
+    y = groundY;
+    verticalVelocity = 0;
+    grounded = true;
+  }
+  return { ...moved, y, groundY, verticalVelocity, grounded };
+}
+
+export function createOutdoorFarmState(now = 0) {
+  return { slots: Array.from({ length: 4 }, (_, index) => ({ index, plantedAt: null })), harvests: 0, now };
+}
+
+export function outdoorCropStage(slot, now, growSeconds = 24) {
+  if (slot?.plantedAt == null) return 'empty';
+  const progress = Math.max(0, (now - slot.plantedAt) / growSeconds);
+  if (progress >= 1) return 'grown';
+  if (progress >= 0.38) return 'sprout';
+  return 'seeded';
+}
+
+export function interactOutdoorFarm(state, slotIndex, now) {
+  const next = { ...state, slots: state.slots.map((slot) => ({ ...slot })), now };
+  const slot = next.slots[slotIndex];
+  if (!slot) return next;
+  if (outdoorCropStage(slot, now) === 'grown') {
+    slot.plantedAt = null;
+    next.harvests += 1;
+  } else if (slot.plantedAt == null) {
+    slot.plantedAt = now;
+  }
+  return next;
+}
+
+export function advanceOutdoorBuild(state = { stage: 0 }) {
+  const stage = Math.min(OUTDOOR_BUILD_STAGES.length - 1, (Number(state.stage) || 0) + 1);
+  return { ...state, stage, label: OUTDOOR_BUILD_STAGES[stage], complete: stage === OUTDOOR_BUILD_STAGES.length - 1 };
 }
 
 export function findNearbyOutdoorNpc(position, npcs = OUTDOOR_NPCS, maxDistance = OUTDOOR_TALK_DISTANCE) {
@@ -144,6 +310,8 @@ export function outdoorDialogueFor(npcData, locale = 'zh-CN', index = 0) {
     speaker: npcData.name[language] ?? npcData.name.en,
     text: lines[normalizedIndex],
     index: normalizedIndex,
+    total: lines.length,
+    isLast: normalizedIndex === lines.length - 1,
   };
 }
 

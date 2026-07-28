@@ -7,7 +7,10 @@ const KEY_DIRECTIONS = new Map([
   ['KeyD', 'right'], ['ArrowRight', 'right'],
 ]);
 
-export function createOutdoorControls({ root, toggleButton, talkButton, onModeChange, onTalk }) {
+export function createOutdoorControls({
+  root, actionRoot, toggleButton, talkButton,
+  onModeChange, onTalk, onJump, onEmote, onInteract, onBuild, onToy,
+}) {
   const pressed = new Set();
   const pointerDirections = new Map();
   let mode = 'indoor';
@@ -25,6 +28,8 @@ export function createOutdoorControls({ root, toggleButton, talkButton, onModeCh
     });
     root?.toggleAttribute('hidden', !visible);
     root?.setAttribute('aria-hidden', String(!visible));
+    actionRoot?.toggleAttribute('hidden', !visible);
+    actionRoot?.setAttribute('aria-hidden', String(!visible));
     document.getElementById('viewport')?.setAttribute('data-outdoor-mobile-controls', String(visible));
   }
 
@@ -55,8 +60,25 @@ export function createOutdoorControls({ root, toggleButton, talkButton, onModeCh
     if (direction) {
       pressed.add(direction);
       event.preventDefault();
+    } else if (event.repeat) {
+      return;
     } else if ((event.code === 'KeyE' || event.code === 'Enter') && talkTarget) {
       onTalk?.(talkTarget);
+      event.preventDefault();
+    } else if (event.code === 'Space') {
+      onJump?.();
+      event.preventDefault();
+    } else if (event.code === 'KeyQ') {
+      onEmote?.();
+      event.preventDefault();
+    } else if (event.code === 'KeyF') {
+      onInteract?.();
+      event.preventDefault();
+    } else if (event.code === 'KeyB') {
+      onBuild?.();
+      event.preventDefault();
+    } else if (event.code === 'KeyT') {
+      onToy?.();
       event.preventDefault();
     }
   }
@@ -88,6 +110,11 @@ export function createOutdoorControls({ root, toggleButton, talkButton, onModeCh
 
   toggleButton?.addEventListener('click', () => onModeChange?.(mode === 'outdoor' ? 'indoor' : 'outdoor'));
   talkButton?.addEventListener('click', () => talkTarget && onTalk?.(talkTarget));
+  document.getElementById('outdoor-jump-button')?.addEventListener('click', () => onJump?.());
+  document.getElementById('outdoor-emote-button')?.addEventListener('click', () => onEmote?.());
+  document.getElementById('outdoor-interact-button')?.addEventListener('click', () => onInteract?.());
+  document.getElementById('outdoor-build-button')?.addEventListener('click', () => onBuild?.());
+  document.getElementById('outdoor-toy-button')?.addEventListener('click', () => onToy?.());
   window.addEventListener('keydown', keyDown);
   window.addEventListener('keyup', keyUp);
   window.addEventListener('blur', () => pressed.clear());
