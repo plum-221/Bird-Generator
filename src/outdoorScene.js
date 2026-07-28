@@ -11,7 +11,6 @@ import {
   sampleOutdoorTerrainHeightfield,
 } from './outdoorWalkModel.js';
 
-const backgroundUrl = new URL('./assets/outdoor/distant-meadow-v1.webp', import.meta.url).href;
 const materialAtlasUrl = new URL('./assets/outdoor/storybook-material-atlas-v1.webp', import.meta.url).href;
 const ink = '#604d3c';
 const terrainHeightfield = createOutdoorTerrainHeightfield();
@@ -233,33 +232,23 @@ function addTrees(group) {
     model.position.set(tree.x, groundY, tree.z);
     model.rotation.y = (tree.variant * 1.7) % Math.PI;
     model.scale.setScalar(tree.scale);
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.48, 3.4, 9), atlasToon('#8f6b45', '1-0', 1.1));
+    const trunk = outlined(new THREE.CylinderGeometry(0.25, 0.48, 3.4, 9), toon('#8f6b45'), 'treeTrunk', 1.035);
     trunk.position.y = 1.7;
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.15, 2), toon(tree.variant === 1 ? '#789d5c' : tree.variant === 2 ? '#90aa61' : '#6f9458'));
-    crown.position.y = 3.85;
-    crown.scale.set(1.12, 0.82, 1.04);
-    trunk.castShadow = true; crown.castShadow = true;
-    model.add(trunk, crown);
+    const branchMaterial = toon('#76563c');
+    for (const [x, y, z, rotation] of [[-0.38, 2.55, 0, -0.65], [0.42, 2.7, 0.04, 0.62], [0, 2.95, -0.12, 0.1]]) {
+      const branch = outlined(new THREE.CylinderGeometry(0.075, 0.13, 1.4, 7), branchMaterial, 'treeBranch', 1.03);
+      branch.position.set(x, y, z); branch.rotation.z = rotation; model.add(branch);
+    }
+    const leafMaterial = toon(tree.variant === 1 ? '#789d5c' : tree.variant === 2 ? '#90aa61' : '#6f9458');
+    const highlightMaterial = toon(tree.variant === 2 ? '#b3c975' : '#a8bf6d');
+    const clusters = [[0, 4.15, 0, 1.2], [-0.9, 3.75, 0.15, 0.78], [0.86, 3.82, 0.1, 0.86], [0, 4.75, -0.08, 0.72]];
+    clusters.forEach(([x, y, z, scale], index) => {
+      const leaf = outlined(new THREE.IcosahedronGeometry(1.12, 1), index % 3 === 0 ? highlightMaterial : leafMaterial, 'treeLeafCluster', 1.025);
+      leaf.position.set(x, y, z); leaf.scale.set(scale * 1.18, scale * 0.72, scale); model.add(leaf);
+    });
+    model.traverse((object) => { if (object.isMesh) object.castShadow = true; });
     group.add(model);
   }
-}
-
-function createSkyTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024; canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#72b9e6');
-  gradient.addColorStop(0.58, '#b9def0');
-  gradient.addColorStop(1, '#d9edcf');
-  ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255,255,255,0.48)';
-  for (const cloud of [[160, 130, 92], [510, 92, 125], [820, 158, 105]]) {
-    ctx.beginPath(); ctx.ellipse(cloud[0], cloud[1], cloud[2], 22, 0, 0, Math.PI * 2); ctx.fill();
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
 }
 
 function createGarden(group) {
@@ -290,9 +279,6 @@ function createGarden(group) {
     garden.add(bed);
     slots.push({ bed, crops });
   }
-  const sign = outlined(new THREE.BoxGeometry(1.7, 0.8, 0.12), toon('#f3dda7'), 'gardenSign');
-  sign.position.set(0, 0.9, -2.25);
-  garden.add(sign);
   group.add(garden);
   return { group: garden, slots };
 }
@@ -383,15 +369,6 @@ export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
 
   // 不再铺设从镜头脚下延伸的长路径带：近景透视会把它压成巨型白色扇面。
 
-  const bridge = new THREE.Group();
-  const bridgeY = terrainGroundHeight(0, -11.8) + 0.22;
-  for (let i = -4; i <= 4; i += 1) {
-    const plank = outlined(new THREE.BoxGeometry(0.75, 0.13, 3.7), toon(i % 2 ? '#a97d58' : '#bc9068'), 'bridgePlank', 1.025);
-    plank.position.set(i * 0.72, bridgeY + Math.cos(i * 0.32) * 0.08, -11.8);
-    plank.rotation.y = -0.18;
-    bridge.add(plank);
-  }
-  group.add(bridge);
   addGrass(group);
   addTrees(group);
   const garden = createGarden(group);
