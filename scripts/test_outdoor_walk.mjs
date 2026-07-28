@@ -57,7 +57,7 @@ const exactZ = heightfield.origin + heightfield.cellSize * 7;
 assert.ok(Math.abs(
   sampleOutdoorTerrainHeightfield(heightfield, exactX, exactZ) - outdoorTerrainHeight(exactX, exactZ)
 ) < 1e-5, 'heightfield samples must match source heights at grid vertices');
-assert.equal(OUTDOOR_TREES.length, 54, 'tree layout must expose every physical tree');
+assert.equal(OUTDOOR_TREES.length, 28, 'tree layout must expose every physical tree');
 const tree = OUTDOOR_TREES[0];
 const blocked = resolveOutdoorCollisions({ x: tree.x, z: tree.z }, { circles: [tree] });
 assert.ok(Math.hypot(blocked.x - tree.x, blocked.z - tree.z) >= tree.radius + 0.45, 'tree trunks must push the player outside their volume');
