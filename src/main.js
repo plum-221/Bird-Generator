@@ -2796,13 +2796,27 @@ document.getElementById('btn-export-glb').addEventListener('click', () => {
 });
 
 let cameraButtonHandledAt = 0;
+const cameraToast = document.getElementById('camera-toast');
+let cameraToastTimer = 0;
+function showCameraToast(message) {
+  if (!cameraToast) return;
+  cameraToast.textContent = message;
+  cameraToast.setAttribute('aria-hidden', 'false');
+  cameraToast.classList.add('is-visible');
+  clearTimeout(cameraToastTimer);
+  cameraToastTimer = window.setTimeout(() => {
+    cameraToast.classList.remove('is-visible');
+    cameraToast.setAttribute('aria-hidden', 'true');
+  }, 2600);
+}
+window.addEventListener('bird:share-captured', () => showCameraToast('截图已生成，正在下载 PNG'));
 function handleCameraButton(event) {
   event.preventDefault();
   const now = performance.now();
   if (now - cameraButtonHandledAt < 350) return;
   cameraButtonHandledAt = now;
   if (shareCardCapture.active) shareCardCapture.close();
-  else shareCardCapture.open();
+  else { showCameraToast('正在生成截图…'); shareCardCapture.openAndCapture(); }
 }
 document.getElementById('btn-export-png').addEventListener('pointerup', handleCameraButton);
 document.getElementById('btn-export-png').addEventListener('click', handleCameraButton);

@@ -793,6 +793,7 @@ export function createShareCardCapture({
         downloadBlob(blob, getShareCardFilename(getSeed()));
         statusEl.textContent = localeCopy(getLocale()).saved;
         viewport.dataset.shareCardCaptured = 'true';
+        window.dispatchEvent(new CustomEvent('bird:share-captured'));
       }
     } finally {
       captureButton.disabled = false;
