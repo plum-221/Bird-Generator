@@ -235,15 +235,16 @@ function addFace(headRig, headRadius, params, materials) {
       const mark = new THREE.Mesh(new THREE.CapsuleGeometry(headRadius * 0.012, headRadius * 0.07, 3, 7), materials.marking);
       mark.name = `foreheadMark${side}-${i}`;
       const surfaceLift = headRadius * 0.006 + smallHeadSurfaceClearance(headRadius);
+      const pitchClearance = headRadius * 0.08;
       const anchor = headSurfaceAnchor(headRadius, side * (0.18 + i * 0.105), 0.47 - i * 0.035, surfaceLift);
       const align = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), anchor.normal);
       const twist = new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), side * (0.65 - i * 0.08));
-      mark.position.copy(anchor.point);
+      mark.position.copy(anchor.point).addScaledVector(anchor.normal, pitchClearance);
       mark.quaternion.copy(align).multiply(twist);
       mark.scale.z = 0.36;
       mark.userData.surfaceAnchored = true;
       mark.userData.surfaceNormal = anchor.normal.clone();
-      mark.userData.surfaceLift = surfaceLift;
+      mark.userData.surfaceLift = surfaceLift + pitchClearance;
       face.add(mark);
     }
   }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { Box3, Vector3 } from 'three';
+import { Box3, PerspectiveCamera, Raycaster, Vector3 } from 'three';
 import { buildBird } from '../src/birdBuilder.js';
 import { DEFAULT_BIRD_PARAMS } from '../src/birdParams.js';
 
@@ -51,6 +51,29 @@ bird.userData.applyExpression({ state: 'love', intensity: 1, expression: {
 assert.ok(expressionHead.rotation.z > baseHeadTilt + 0.08, 'love expression must visibly tilt the head');
 assert.ok(expressionWing.rotation.z < baseWingTilt - 0.08, 'love expression must lift the folded wing');
 assert.ok(leftEyeGroup.userData.gaze.scale.y < 0.75, 'love expression must soften the eyes through EyeGaze');
+bird.userData.resetBirdParts();
+bird.userData.clearExpression();
+bird.userData.applyExpression({ state: 'startled', intensity: 1, expression: {
+  eyeX: 1.24, eyeY: 1.28, headTilt: 0.04, headPitch: -0.16,
+  wingLift: 0.32, bodyBob: 0.055, fluff: 0.42,
+} }, 0.1);
+bird.updateMatrixWorld(true);
+const expressionCamera = new PerspectiveCamera(35, 1, 0.1, 100);
+expressionCamera.position.set(0, 1.05, 3.35);
+expressionCamera.lookAt(0, 0.72, 0);
+expressionCamera.updateMatrixWorld(true);
+const expressionRay = new Raycaster();
+const bodySurface = bird.getObjectByName('body');
+for (const name of foreheadMarks) {
+  const markPosition = bird.getObjectByName(name).getWorldPosition(new Vector3());
+  const screenPosition = markPosition.clone().project(expressionCamera);
+  expressionRay.setFromCamera(screenPosition, expressionCamera);
+  const surfaceHit = expressionRay.intersectObject(bodySurface, false)[0];
+  assert.ok(
+    !surfaceHit || surfaceHit.distance >= expressionCamera.position.distanceTo(markPosition) - 0.002,
+    `${name} must remain in front of the head surface during the strongest backward pitch`
+  );
+}
 assert.ok(bird.userData.visualProfile, 'bird must publish visual profile metadata');
 assert.equal(bird.userData.visualProfile.species, 'budgerigar');
 assert.equal(bird.userData.visualProfile.modelVersion, 'sdf-v3');
