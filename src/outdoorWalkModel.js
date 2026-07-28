@@ -74,7 +74,7 @@ export function sampleOutdoorTerrainHeightfield(field, x, z) {
   return near + (far - near) * tz;
 }
 
-export function createOutdoorTreeLayout(count = 54, seed = 2210728) {
+export function createOutdoorTreeLayout(count = 28, seed = 2210728) {
   let value = seed >>> 0;
   const rand = () => {
     value += 0x6d2b79f5;

@@ -229,19 +229,19 @@ function addTrees(group) {
     const model = new THREE.Group();
     model.name = `outdoorTree-${tree.id}`;
     const groundY = terrainGroundHeight(tree.x, tree.z);
-    model.position.set(tree.x, groundY, tree.z);
+    model.position.set(tree.x, groundY - 0.04, tree.z);
     model.rotation.y = (tree.variant * 1.7) % Math.PI;
     model.scale.setScalar(tree.scale);
     const trunk = outlined(new THREE.CylinderGeometry(0.25, 0.48, 3.4, 9), toon('#8f6b45'), 'treeTrunk', 1.035);
     trunk.position.y = 1.7;
     const branchMaterial = toon('#76563c');
-    for (const [x, y, z, rotation] of [[-0.38, 2.55, 0, -0.65], [0.42, 2.7, 0.04, 0.62], [0, 2.95, -0.12, 0.1]]) {
+    for (const [x, y, z, rotation] of [[-0.32, 2.48, 0, -0.65], [0.34, 2.62, 0.04, 0.62]]) {
       const branch = outlined(new THREE.CylinderGeometry(0.075, 0.13, 1.4, 7), branchMaterial, 'treeBranch', 1.03);
       branch.position.set(x, y, z); branch.rotation.z = rotation; model.add(branch);
     }
     const leafMaterial = toon(tree.variant === 1 ? '#789d5c' : tree.variant === 2 ? '#90aa61' : '#6f9458');
     const highlightMaterial = toon(tree.variant === 2 ? '#b3c975' : '#a8bf6d');
-    const clusters = [[0, 4.15, 0, 1.2], [-0.9, 3.75, 0.15, 0.78], [0.86, 3.82, 0.1, 0.86], [0, 4.75, -0.08, 0.72]];
+    const clusters = [[0, 4.05, 0, 1.08], [-0.82, 3.7, 0.15, 0.7], [0.78, 3.76, 0.1, 0.76]];
     clusters.forEach(([x, y, z, scale], index) => {
       const leaf = outlined(new THREE.IcosahedronGeometry(1.12, 1), index % 3 === 0 ? highlightMaterial : leafMaterial, 'treeLeafCluster', 1.025);
       leaf.position.set(x, y, z); leaf.scale.set(scale * 1.18, scale * 0.72, scale); model.add(leaf);
@@ -351,9 +351,9 @@ function uniqueNpcParams(params, index) {
 }
 
 const outdoorExpressions = [
-  { id: 'happy', expression: { eyeX: 1, eyeY: 0.38, headTilt: 0.08, headPitch: -0.04, wingLift: 0.13, bodyBob: 0.025, fluff: 0.35 } },
-  { id: 'surprised', expression: { eyeX: 1.14, eyeY: 1.18, headTilt: -0.04, headPitch: -0.11, wingLift: 0.2, bodyBob: 0.06, fluff: 0.65 } },
-  { id: 'proud', expression: { eyeX: 0.92, eyeY: 0.72, headTilt: 0.13, headPitch: 0.07, wingLift: 0.05, bodyBob: 0.02, fluff: 0.2 } },
+  { id: 'happy', expression: { eyeX: 1, eyeY: 0.38, headTilt: 0.08, headPitch: -0.04, wingLift: 0, bodyBob: 0.012, fluff: 0.18 } },
+  { id: 'surprised', expression: { eyeX: 1.08, eyeY: 1.08, headTilt: -0.04, headPitch: -0.08, wingLift: 0, bodyBob: 0.02, fluff: 0.26 } },
+  { id: 'proud', expression: { eyeX: 0.94, eyeY: 0.72, headTilt: 0.1, headPitch: 0.05, wingLift: 0, bodyBob: 0.01, fluff: 0.12 } },
 ];
 
 export function createOutdoorScene(scene, params, { toyCatalog = [] } = {}) {
