@@ -232,11 +232,11 @@ function addTrees(group) {
     model.position.set(tree.x, groundY - 0.04, tree.z);
     model.rotation.y = (tree.variant * 1.7) % Math.PI;
     model.scale.setScalar(tree.scale);
-    const trunk = outlined(new THREE.CylinderGeometry(0.25, 0.48, 3.4, 9), toon('#8f6b45'), 'treeTrunk', 1.035);
-    trunk.position.y = 1.7;
+    const trunk = outlined(new THREE.CylinderGeometry(0.42, 0.72, 3.2, 9), toon('#825b3e'), 'treeTrunk', 1.045);
+    trunk.position.y = 1.6;
     const leafMaterial = toon(tree.variant === 1 ? '#789d5c' : tree.variant === 2 ? '#90aa61' : '#6f9458');
     const highlightMaterial = toon(tree.variant === 2 ? '#b3c975' : '#a8bf6d');
-    const clusters = [[0, 4.05, 0, 1.08], [-0.82, 3.7, 0.15, 0.7], [0.78, 3.76, 0.1, 0.76]];
+    const clusters = [[0, 3.78, 0, 1.0], [-0.76, 3.5, 0.15, 0.66], [0.72, 3.56, 0.1, 0.7]];
     clusters.forEach(([x, y, z, scale], index) => {
       const leaf = outlined(new THREE.IcosahedronGeometry(1.12, 1), index % 3 === 0 ? highlightMaterial : leafMaterial, 'treeLeafCluster', 1.025);
       leaf.position.set(x, y, z); leaf.scale.set(scale * 1.18, scale * 0.72, scale); model.add(leaf);
